@@ -94,9 +94,46 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
 .turno-tag{display:inline-flex;align-items:center;gap:4px;background:#f1efe8;border:1px solid #e8e6e0;border-radius:6px;padding:4px 10px;font-size:12px;margin:2px}
 .turno-header{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:8px;padding:0 10px;margin-bottom:4px}
 .turno-header span{font-size:10px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:.04em}
+
+/* BOTTOM NAV MOBILE */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8e6e0;z-index:100;padding:6px 0 env(safe-area-inset-bottom,0px)}
+.bn-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border:none;background:none;cursor:pointer;color:#888;font-size:10px;min-width:0}
+.bn-btn.active{color:#1a1a1a;font-weight:500}
+.bn-btn .icon{font-size:18px;line-height:1}
+.bn-wrap{position:relative}
+.bn-badge{background:#fcebeb;color:#791f1f;font-size:9px;font-weight:600;padding:1px 4px;border-radius:10px;position:absolute;top:2px;right:calc(50% - 14px)}
+@media(max-width:640px){
+  .sidebar{display:none}
+  .bottom-nav{display:flex}
+  .main{margin-left:0!important;padding:14px 12px 80px!important;max-width:100%!important}
+  .hrow{flex-wrap:wrap;gap:8px}
+  .ptitle{font-size:17px}
+  .fgrid{grid-template-columns:1fr!important}
+  .full{grid-column:1!important}
+  .igrid{grid-template-columns:1fr!important}
+  .stat-row{gap:6px}
+  .stat{padding:10px 6px}
+  .stat-v{font-size:18px}
+  .modal{padding:16px;border-radius:14px 14px 0 0;position:fixed;bottom:0;left:0;right:0;width:100%!important;max-width:100%!important;max-height:92vh;margin:0}
+  .mo.open{align-items:flex-end}
+  .turno-fila{grid-template-columns:1fr 1fr 1fr auto;gap:4px;padding:6px 8px}
+  .mactions{flex-direction:column-reverse}
+  .mactions button{width:100%}
+  .dtab{padding:8px 8px;font-size:11px}
+  .card{padding:12px}
+}
 </style>
 </head>
 <body>
+
+<nav class="bottom-nav">
+  <button class="bn-btn active" id="bn-pacientes" onclick="showSec('pacientes',this,true)"><span class="icon">👤</span>Pacientes</button>
+  <button class="bn-btn" id="bn-agenda" onclick="showSec('agenda',this,true)"><span class="icon">📅</span>Agenda</button>
+  <button class="bn-btn" id="bn-asistencia" onclick="showSec('asistencia',this,true)"><span class="icon">✓</span>Asistencia</button>
+  <button class="bn-btn" id="bn-registro" onclick="showSec('registro',this,true)"><span class="icon">📓</span>Registro</button>
+  <button class="bn-btn" id="bn-pagos" onclick="showSec('pagos',this,true)"><span class="icon">💰</span>Pagos</button>
+  <div class="bn-wrap"><button class="bn-btn" id="bn-tareas" onclick="showSec('tareas',this,true)"><span class="icon">☑</span>Tareas</button><span id="bn-badge-tareas" class="bn-badge" style="display:none">0</span></div>
+</nav>
 <div class="app">
 <nav class="sidebar">
   <div class="sidebar-logo">🧠 Mi Consultorio</div>
@@ -350,11 +387,14 @@ function fillPacSelects(){
 }
 function toggleRegPaciente(){document.getElementById('reg-pac-sel').style.display=document.getElementById('reg-tipo').value==='paciente'?'flex':'none';}
 
-function showSec(name,btn){
+function showSec(name,btn,isMobile=false){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('vis'));
   document.getElementById('sec-'+name).classList.add('vis');
   document.querySelectorAll('.sb').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.bn-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  const other=isMobile?document.querySelector('.sb[onclick*=\"\'+name+\'\"]'):document.getElementById('bn-'+name);
+  if(other)other.classList.add('active');
   if(name==='agenda')renderAgenda();
   if(name==='asistencia'){document.getElementById('fecha-asi').value=today();renderAsi();}
   if(name==='pagos')renderPagosGlobal();
@@ -610,7 +650,7 @@ async function eliminarTask(id){
   await db.from('tareas').delete().eq('id',id);tasks=tasks.filter(t=>t.id!==id);renderTasks();updateTaskBadge();
 }
 
-function updateTaskBadge(){const pend=tasks.filter(t=>t.estado==='pendiente').length;const b=document.getElementById('badge-tareas');pend>0?(b.textContent=pend,b.style.display='inline-block'):b.style.display='none';}
+function updateTaskBadge(){const pend=tasks.filter(t=>t.estado==='pendiente').length;const b=document.getElementById('badge-tareas');const b2=document.getElementById('bn-badge-tareas');if(pend>0){if(b){b.textContent=pend;b.style.display='inline-block';}if(b2){b2.textContent=pend;b2.style.display='inline-block';}}else{if(b)b.style.display='none';if(b2)b2.style.display='none';}}
 function filtrarTasks(f,btn){taskFilter=f;document.querySelectorAll('#task-filtros .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTasks();}
 
 function renderTasks(){
