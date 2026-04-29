@@ -318,16 +318,20 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
 
 <!-- MODAL PAGO -->
 <div class="mo" id="mo-pago">
-  <div class="modal" style="width:420px">
-    <p class="mtitle">Registrar pago</p>
+  <div class="modal" style="width:480px">
+    <p class="mtitle">Registrar cobro</p>
     <div class="fgrid">
-      <div class="fg"><label>Fecha</label><input type="date" id="pag-f"></div>
-      <div class="fg"><label>Servicio</label><select id="pag-sv"><option value="">— todos los servicios —</option></select></div>
-      <div class="fg"><label>Monto ($)</label><input type="number" id="pag-m"></div>
-      <div class="fg"><label>Período que cubre</label><input type="text" id="pag-p" placeholder="Ej: Abril-Mayo 2025"></div>
+      <div class="fg"><label>Mes a cobrar</label><input type="month" id="pag-mes" onchange="calcularCobro()"></div>
+      <div class="fg"><label>Fecha de cobro</label><input type="date" id="pag-f"></div>
+    </div>
+    <div id="pag-calculo" style="display:none;margin-bottom:12px"></div>
+    <div class="fgrid">
+      <div class="fg"><label>Servicio</label><select id="pag-sv" onchange="calcularCobro()"><option value="">— todos los servicios —</option></select></div>
+      <div class="fg"><label>Monto a cobrar ($)</label><input type="number" id="pag-m" placeholder="0"></div>
+      <div class="fg full"><label>Período</label><input type="text" id="pag-p" placeholder="Ej: Abril 2025"></div>
       <div class="fg full"><label>Notas</label><input type="text" id="pag-n"></div>
     </div>
-    <div class="mactions"><button class="btn-s" onclick="closeMo('mo-pago')">Cancelar</button><button class="btn-p" onclick="guardarPago()">Guardar</button></div>
+    <div class="mactions"><button class="btn-s" onclick="closeMo('mo-pago')">Cancelar</button><button class="btn-p" onclick="guardarPago()">Guardar cobro</button></div>
   </div>
 </div>
 
@@ -415,10 +419,17 @@ function openMo(id){
   if(id==='mo-ses'&&!document.getElementById('ses-f').value)document.getElementById('ses-f').value=today();
   if(id==='mo-pago'){
     if(!document.getElementById('pag-f').value)document.getElementById('pag-f').value=today();
+    // Set default month to current month
+    const now=new Date();
+    document.getElementById('pag-mes').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    // Set default period
+    document.getElementById('pag-p').value=now.toLocaleDateString('es-AR',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
     const svSel=document.getElementById('pag-sv');
     const svs=curPId?serviciosCache[curPId]||[]:[];
-    svSel.innerHTML='<option value="">— todos los servicios —</option>'+svs.map(s=>`<option value="${s.id}" data-monto="${s.monto_actual||0}">${s.tipo} ($${Number(s.monto_actual||0).toLocaleString('es-AR')})</option>`).join('');
-    svSel.onchange=function(){const opt=this.options[this.selectedIndex];if(opt.dataset.monto)document.getElementById('pag-m').value=opt.dataset.monto;};
+    svSel.innerHTML='<option value="">— todos los servicios —</option>'+svs.map(s=>`<option value="${s.id}" data-monto="${s.monto_actual||0}" data-tipo="${s.tipo}">${s.tipo} ($${Number(s.monto_actual||0).toLocaleString('es-AR')}/sesión)</option>`).join('');
+    document.getElementById('pag-calculo').style.display='none';
+    document.getElementById('pag-m').value='';
+    calcularCobro();
   }
   if(id==='mo-reg'){fillPacSelects();if(!document.getElementById('reg-f').value)document.getElementById('reg-f').value=today();}
   if(id==='mo-tarea')fillPacSelects();
@@ -932,6 +943,79 @@ async function guardarServicios(pacienteId, servicios){
       await db.from('servicios').update({activo:false}).eq('id',eid);
     }
   }
+}
+
+
+function calcularCobro(){
+  if(!curPId)return;
+  const mesVal=document.getElementById('pag-mes').value;
+  if(!mesVal)return;
+  const [anio,mes]=mesVal.split('-').map(Number);
+  const svSel=document.getElementById('pag-sv');
+  const svId=svSel.value?parseInt(svSel.value):null;
+  const svs=serviciosCache[curPId]||[];
+  
+  // Filtrar sesiones del mes (presentes y justificadas)
+  const todasSes=sesionesCache[curPId]||[];
+  const sesDelMes=todasSes.filter(s=>{
+    const d=new Date(s.fecha+'T12:00');
+    return d.getFullYear()===anio&&d.getMonth()+1===mes&&(s.asistencia==='Presente'||s.asistencia==='Justificado');
+  });
+  
+  const totalSes=sesDelMes.length;
+  
+  // Calcular por servicio
+  let calcHtml='';
+  let totalCalculado=0;
+  
+  if(svId){
+    // Un servicio específico
+    const sv=svs.find(x=>x.id===svId);
+    if(sv){
+      const montoPorSes=sv.monto_actual||0;
+      const subtotal=totalSes*montoPorSes;
+      totalCalculado=subtotal;
+      calcHtml=`<div style="padding:4px 0">
+        <div style="display:flex;justify-content:space-between;font-size:13px">
+          <span>${sv.tipo}</span>
+          <span>${totalSes} sesiones × $${montoPorSes.toLocaleString('es-AR')} = <strong>$${subtotal.toLocaleString('es-AR')}</strong></span>
+        </div>
+      </div>`;
+    }
+  } else {
+    // Todos los servicios — asumimos mismas sesiones para todos
+    svs.forEach(sv=>{
+      const montoPorSes=sv.monto_actual||0;
+      const subtotal=totalSes*montoPorSes;
+      totalCalculado+=subtotal;
+      calcHtml+=`<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid #e8e6e0">
+        <span style="color:#666">${sv.tipo}</span>
+        <span>${totalSes} ses. × $${montoPorSes.toLocaleString('es-AR')} = $${subtotal.toLocaleString('es-AR')}</span>
+      </div>`;
+    });
+  }
+  
+  const el=document.getElementById('pag-calculo');
+  if(totalSes===0){
+    el.style.display='block';
+    el.innerHTML=`<div style="background:#faeeda;border:1px solid #f0d5a0;border-radius:8px;padding:10px 14px;font-size:13px;color:#633806">No hay sesiones presentes o justificadas en este mes para calcular.</div>`;
+    document.getElementById('pag-m').value='';
+    return;
+  }
+  
+  el.style.display='block';
+  el.innerHTML=`<div style="background:#f8f7f4;border:1px solid #e8e6e0;border-radius:10px;padding:12px 14px;margin-bottom:4px">
+    <p style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Cálculo del mes</p>
+    ${calcHtml}
+    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:600;margin-top:8px;padding-top:8px;border-top:1px solid #d0cec8">
+      <span>Total calculado</span>
+      <span style="color:#1a1a1a">$${totalCalculado.toLocaleString('es-AR')}</span>
+    </div>
+    <p style="font-size:11px;color:#888;margin-top:6px">${totalSes} sesión${totalSes>1?'es':''} cobrable${totalSes>1?'s':''} (presentes + justificadas)</p>
+  </div>`;
+  
+  // Auto-fill monto
+  document.getElementById('pag-m').value=totalCalculado;
 }
 
 function renderPagosGlobal(){
