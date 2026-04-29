@@ -122,6 +122,17 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
   .dtab{padding:8px 8px;font-size:11px}
   .card{padding:12px}
 }
+
+.servicio-fila{display:grid;grid-template-columns:1.5fr 1fr auto;gap:8px;align-items:center;padding:8px 10px;background:#f8f7f4;border-radius:8px;margin-bottom:6px}
+.servicio-fila select,.servicio-fila input[type=number]{padding:6px 8px;border:1px solid #d0cec8;border-radius:6px;font-size:13px;background:#fff;width:100%}
+.servicio-header{display:grid;grid-template-columns:1.5fr 1fr auto;gap:8px;padding:0 10px;margin-bottom:4px}
+.servicio-header span{font-size:10px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:.04em}
+.servicio-tag{display:inline-flex;align-items:center;gap:6px;background:#f1efe8;border:1px solid #e8e6e0;border-radius:8px;padding:6px 12px;font-size:13px;margin:3px}
+.servicio-tag strong{color:#1a1a1a}
+.servicio-tag span{color:#888;font-size:12px}
+@media(max-width:640px){
+  .servicio-fila{grid-template-columns:1fr 1fr auto}
+}
 </style>
 </head>
 <body>
@@ -217,6 +228,11 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
       <div class="fg"><label>Ciclo de pago (cobros posteriores)</label><select id="np-ciclo"><option value="30">Cada 30 días</option><option value="60">Cada 60 días</option><option value="90">Cada 90 días</option></select></div>
       <div class="fg"><label>Próximo cobro estimado</label><input type="date" id="np-prox-cobro"></div>
       <div class="fg full">
+        <label>Servicios y montos</label>
+        <div id="servicios-container"></div>
+        <button class="btn-add-turno" onclick="agregarServicioFila()">+ Agregar servicio</button>
+      </div>
+      <div class="fg full">
         <label>Turnos</label>
         <div class="turno-header"><span>Día</span><span>Inicio</span><span>Fin</span><span></span></div>
         <div id="turnos-container"></div>
@@ -241,6 +257,7 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
       <button class="dtab" onclick="showDTab('dt-reg',this)">Registro</button>
       <button class="dtab" onclick="showDTab('dt-pag',this)">Pagos</button>
       <button class="dtab" onclick="showDTab('dt-asis',this)">Asistencia</button>
+      <button class="dtab" onclick="showDTab('dt-montos',this);loadHistorialMontos()">Montos</button>
     </div>
     <div id="dt-info" class="dtsec vis"></div>
     <div id="dt-ses" class="dtsec">
@@ -256,6 +273,7 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
       <div id="pag-lista-det"></div>
     </div>
     <div id="dt-asis" class="dtsec"><div id="det-asis-c"></div></div>
+    <div id="dt-montos" class="dtsec"><div id="det-montos-c"><div class="loading">Cargando...</div></div></div>
     <div class="mactions"><button class="btn-s" onclick="closeMo('mo-det')">Cerrar</button></div>
   </div>
 </div>
@@ -280,8 +298,9 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
     <p class="mtitle">Registrar pago</p>
     <div class="fgrid">
       <div class="fg"><label>Fecha</label><input type="date" id="pag-f"></div>
+      <div class="fg"><label>Servicio</label><select id="pag-sv"><option value="">— todos los servicios —</option></select></div>
       <div class="fg"><label>Monto ($)</label><input type="number" id="pag-m"></div>
-      <div class="fg full"><label>Período que cubre</label><input type="text" id="pag-p" placeholder="Ej: Abril-Mayo 2025"></div>
+      <div class="fg"><label>Período que cubre</label><input type="text" id="pag-p" placeholder="Ej: Abril-Mayo 2025"></div>
       <div class="fg full"><label>Notas</label><input type="text" id="pag-n"></div>
     </div>
     <div class="mactions"><button class="btn-s" onclick="closeMo('mo-pago')">Cancelar</button><button class="btn-p" onclick="guardarPago()">Guardar</button></div>
@@ -370,7 +389,13 @@ function renderTurnosInfo(turnos){
 function openMo(id){
   document.getElementById(id).classList.add('open');
   if(id==='mo-ses'&&!document.getElementById('ses-f').value)document.getElementById('ses-f').value=today();
-  if(id==='mo-pago'&&!document.getElementById('pag-f').value)document.getElementById('pag-f').value=today();
+  if(id==='mo-pago'){
+    if(!document.getElementById('pag-f').value)document.getElementById('pag-f').value=today();
+    const svSel=document.getElementById('pag-sv');
+    const svs=curPId?serviciosCache[curPId]||[]:[];
+    svSel.innerHTML='<option value="">— todos los servicios —</option>'+svs.map(s=>`<option value="${s.id}" data-monto="${s.monto_actual||0}">${s.tipo} ($${Number(s.monto_actual||0).toLocaleString('es-AR')})</option>`).join('');
+    svSel.onchange=function(){const opt=this.options[this.selectedIndex];if(opt.dataset.monto)document.getElementById('pag-m').value=opt.dataset.monto;};
+  }
   if(id==='mo-reg'){fillPacSelects();if(!document.getElementById('reg-f').value)document.getElementById('reg-f').value=today();}
   if(id==='mo-tarea')fillPacSelects();
 }
@@ -436,6 +461,11 @@ function abrirFormPaciente(p=null){
     }
   }
   document.getElementById('np-prox-cobro').value=proxCobro;
+  // Cargar servicios
+  document.getElementById('servicios-container').innerHTML='';
+  const svs=p?serviciosCache[p.id]||[]:[];
+  if(svs.length)svs.forEach(s=>agregarServicioFila(s.tipo,s.monto_actual,s.id));
+  else agregarServicioFila();
   document.getElementById('turnos-container').innerHTML='';
   const turnos=p&&p.turnos?p.turnos:[];
   if(turnos.length)turnos.forEach(t=>agregarTurnoFila(t.dia,t.inicio||'',t.fin||''));
@@ -466,6 +496,7 @@ async function loadAllSesionesPagos(){
   sesionesCache={};pagosCache={};
   (ses||[]).forEach(s=>{if(!sesionesCache[s.paciente_id])sesionesCache[s.paciente_id]=[];sesionesCache[s.paciente_id].push(s);});
   (pag||[]).forEach(pg=>{if(!pagosCache[pg.paciente_id])pagosCache[pg.paciente_id]=[];pagosCache[pg.paciente_id].push(pg);});
+  await loadServicios(ids);
 }
 
 function renderPacientes(filtro=''){
@@ -489,7 +520,7 @@ function renderPacientes(filtro=''){
           ${dur?`<span class="badge b-purple" style="margin-right:4px">${dur}</span>`:''}
           Asistencia: ${tot?`${pres}/${tot} (${Math.round(pres/tot*100)}%)`:'Sin sesiones'} · <span class="badge ${estadoBadge(p)}">${estadoPago(p)}</span>
         </p>
-        <p style="font-size:12px;color:#888;margin-top:2px">Próximo cobro: ${fmtProxCobro(p)}</p>
+        <p style="font-size:12px;color:#888;margin-top:2px">Próximo cobro: ${fmtProxCobro(p)} ${totalServicios(p.id)?'· <strong>$'+totalServicios(p.id).toLocaleString('es-AR')+'</strong>':''}</p>
       </div>
       <div style="display:flex;gap:6px">
         <button class="btn-edit" onclick="abrirFormPaciente(pacientes.find(x=>x.id===${p.id}))">✏️</button>
@@ -503,9 +534,17 @@ async function guardarP(){
   const n=document.getElementById('np-n').value.trim();
   if(!n){alert('El nombre es obligatorio.');return;}
   const id=document.getElementById('np-id').value;
-  const datos={nombre:n,dni:document.getElementById('np-d').value.trim()||null,fnac:document.getElementById('np-f').value||null,inicio:document.getElementById('np-inicio').value||null,os:document.getElementById('np-os').value.trim()||null,escuela:document.getElementById('np-esc').value.trim()||null,dx:document.getElementById('np-dx').value.trim()||null,familia:document.getElementById('np-fam').value.trim()||null,ciclo:parseInt(document.getElementById('np-ciclo').value),prox_cobro:document.getElementById('np-prox-cobro').value||null,turnos:getTurnos()};
+  const datos={nombre:n,dni:document.getElementById('np-d').value.trim()||null,fnac:document.getElementById('np-f').value||null,inicio:document.getElementById('np-inicio').value||null,os:document.getElementById('np-os').value.trim()||null,escuela:document.getElementById('np-esc').value.trim()||null,dx:document.getElementById('np-dx').value.trim()||null,familia:document.getElementById('np-fam').value.trim()||null,ciclo:parseInt(document.getElementById('np-ciclo').value),prox_cobro:document.getElementById('np-prox-cobro').value||null,monto_actual:parseFloat(document.getElementById('np-monto').value)||null,turnos:getTurnos()};
   const {error}=id?await db.from('pacientes').update(datos).eq('id',id):await db.from('pacientes').insert(datos);
   if(error){alert('Error al guardar: '+error.message);return;}
+  // Guardar servicios
+  const svForms=getServicios();
+  if(id){
+    await guardarServicios(parseInt(id),svForms);
+  } else {
+    const {data:newP}=await db.from('pacientes').select('id').order('created_at',{ascending:false}).limit(1);
+    if(newP&&newP[0])await guardarServicios(newP[0].id,svForms);
+  }
   closeMo('mo-np');toast(id?'Paciente actualizado ✓':'Paciente guardado ✓');
   await loadPacientes();
   if(id&&curPId==id)verP(parseInt(id));
@@ -564,12 +603,15 @@ async function renderPagosD(p){
   if(!pgs.length){el.innerHTML='<div class="empty">Sin pagos registrados.</div>';return;}
   const tot=pgs.reduce((a,x)=>a+(x.monto||0),0);
   el.innerHTML=`<div class="stat-row"><div class="stat"><div class="stat-l">Total cobrado</div><div class="stat-v" style="font-size:17px">$${tot.toLocaleString('es-AR')}</div></div><div class="stat"><div class="stat-l">Pagos</div><div class="stat-v">${pgs.length}</div></div><div class="stat"><div class="stat-l">Estado</div><div class="stat-v" style="font-size:13px"><span class="badge ${estadoBadge(p)}">${estadoPago(p)}</span></div></div></div>
-  <table class="ptable"><thead><tr><th>Fecha</th><th>Período</th><th>Monto</th></tr></thead><tbody>${[...pgs].reverse().map(pg=>`<tr><td>${fmtShort(pg.fecha)}</td><td>${pg.periodo||'-'}</td><td style="font-weight:500">$${(pg.monto||0).toLocaleString('es-AR')}</td></tr>`).join('')}</tbody></table>`;
+  <table class="ptable"><thead><tr><th>Fecha</th><th>Servicio</th><th>Período</th><th>Monto</th></tr></thead><tbody>${[...pgs].reverse().map(pg=>`<tr><td>${fmtShort(pg.fecha)}</td><td style="font-size:12px;color:#888">${pg.tipo_servicio||'General'}</td><td>${pg.periodo||'-'}</td><td style="font-weight:500">$${(pg.monto||0).toLocaleString('es-AR')}</td></tr>`).join('')}</tbody></table>`;
 }
 
 async function guardarPago(){
   const p=pacientes.find(x=>x.id===curPId);
-  const {data,error}=await db.from('pagos').insert({paciente_id:curPId,fecha:document.getElementById('pag-f').value,monto:parseFloat(document.getElementById('pag-m').value)||0,periodo:document.getElementById('pag-p').value.trim()||null,notas:document.getElementById('pag-n').value.trim()||null}).select().single();
+  const svSelEl=document.getElementById('pag-sv');
+  const svId=svSelEl.value?parseInt(svSelEl.value):null;
+  const svTipo=svSelEl.value?svSelEl.options[svSelEl.selectedIndex].text.split(' ($')[0]:null;
+  const {data,error}=await db.from('pagos').insert({paciente_id:curPId,fecha:document.getElementById('pag-f').value,monto:parseFloat(document.getElementById('pag-m').value)||0,periodo:document.getElementById('pag-p').value.trim()||null,notas:document.getElementById('pag-n').value.trim()||null,servicio_id:svId,tipo_servicio:svTipo}).select().single();
   if(error){alert('Error: '+error.message);return;}
   if(!pagosCache[curPId])pagosCache[curPId]=[];pagosCache[curPId].push(data);
   // Actualizar próximo cobro automáticamente
@@ -760,11 +802,119 @@ function renderAsisPaciente(p){
   ${[...ses].reverse().map(s=>{const bc=s.asistencia==='Presente'?'b-ok':s.asistencia==='Justificado'?'b-warn':'b-bad';return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #e8e6e0"><span style="font-size:12px;color:#888;min-width:85px">${fmtShort(s.fecha)}</span><span class="badge ${bc}">${s.asistencia}</span></div>`;}).join('')}`;
 }
 
+
+async function loadHistorialMontos(){
+  if(!curPId)return;
+  const el=document.getElementById('det-montos-c');
+  const svs=serviciosCache[curPId]||[];
+  const {data}=await db.from('historial_montos').select('*').eq('paciente_id',curPId).order('fecha',{ascending:false});
+  const hist=data||[];
+  
+  const totalActual=svs.reduce((a,s)=>a+(s.monto_actual||0),0);
+  
+  // Resumen de servicios actuales
+  const svHtml=svs.length?svs.map(s=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8f7f4;border-radius:8px;margin-bottom:6px">
+      <div><p style="font-size:13px;font-weight:500">${s.tipo}</p><span class="badge b-ok" style="margin-top:4px;display:inline-block">Activo</span></div>
+      <p style="font-size:18px;font-weight:600">$${Number(s.monto_actual||0).toLocaleString('es-AR')}</p>
+    </div>`).join(''):'<p style="font-size:13px;color:#888;padding:10px 0">Sin servicios asignados</p>';
+  
+  // Historial agrupado por servicio
+  const histHtml=hist.length?hist.map(h=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #e8e6e0">
+      <div style="flex:1">
+        <p style="font-size:13px;font-weight:500">$${Number(h.monto).toLocaleString('es-AR')} <span style="font-weight:400;color:#888;font-size:12px">— ${h.tipo_servicio||'Servicio'}</span></p>
+        ${h.motivo?`<p style="font-size:12px;color:#888;margin-top:2px">${h.motivo}</p>`:''}
+      </div>
+      <span style="font-size:12px;color:#888;white-space:nowrap">${fmtDate(h.fecha)}</span>
+    </div>`).join(''):'<div class="empty" style="padding:20px 0">Sin historial de cambios.</div>';
+
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div><p style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em">Total mensual</p><p style="font-size:24px;font-weight:600">$${totalActual.toLocaleString('es-AR')}</p></div>
+      <button class="btn-p btn-sm" onclick="editarPacienteActual()">✏️ Editar servicios</button>
+    </div>
+    <p style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Servicios activos</p>
+    ${svHtml}
+    <p style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">Historial de montos</p>
+    ${histHtml}`;
+}
+
+// ─── SERVICIOS ───────────────────────────────────────────
+const TIPOS_SERVICIO=['Tratamiento','Integración escolar','Tratamiento + Integración escolar','Otro'];
+let serviciosCache={};
+
+async function loadServicios(ids){
+  if(!ids||!ids.length)return;
+  const {data}=await db.from('servicios').select('*').in('paciente_id',ids).eq('activo',true).order('created_at');
+  serviciosCache={};
+  (data||[]).forEach(s=>{if(!serviciosCache[s.paciente_id])serviciosCache[s.paciente_id]=[];serviciosCache[s.paciente_id].push(s);});
+}
+
+function agregarServicioFila(tipo='Tratamiento',monto='',sid=''){
+  const c=document.getElementById('servicios-container');
+  const uid='sv'+Date.now()+Math.floor(Math.random()*1000);
+  const div=document.createElement('div');
+  div.className='servicio-fila';div.id=uid;
+  div.dataset.sid=sid;
+  div.innerHTML=`<select class="sv-tipo">${TIPOS_SERVICIO.map(t=>`<option${t===tipo?' selected':''}>${t}</option>`).join('')}</select><input type="number" class="sv-monto" value="${monto}" placeholder="Monto $"><button class="btn-del-turno" onclick="document.getElementById('${uid}').remove()">×</button>`;
+  c.appendChild(div);
+}
+
+function getServicios(){
+  return Array.from(document.querySelectorAll('#servicios-container .servicio-fila')).map(f=>({
+    sid:f.dataset.sid||null,
+    tipo:f.querySelector('.sv-tipo').value,
+    monto:parseFloat(f.querySelector('.sv-monto').value)||0
+  }));
+}
+
+function renderServiciosInfo(svs){
+  if(!svs||!svs.length)return'<p style="font-size:13px;color:#888">Sin servicios asignados</p>';
+  return svs.map(s=>`<span class="servicio-tag"><strong>${s.tipo}</strong><span>$${Number(s.monto_actual||s.monto||0).toLocaleString('es-AR')}</span></span>`).join('');
+}
+
+function totalServicios(pid){
+  const svs=serviciosCache[pid]||[];
+  return svs.reduce((a,s)=>a+(s.monto_actual||0),0);
+}
+
+async function guardarServicios(pacienteId, servicios){
+  // Get existing
+  const {data:existing}=await db.from('servicios').select('*').eq('paciente_id',pacienteId).eq('activo',true);
+  const existingIds=(existing||[]).map(s=>s.id);
+  
+  for(const sv of servicios){
+    if(sv.sid&&existingIds.includes(parseInt(sv.sid))){
+      // Update existing
+      const prev=(existing||[]).find(x=>x.id===parseInt(sv.sid));
+      if(prev&&prev.monto_actual!==sv.monto){
+        await db.from('servicios').update({monto_actual:sv.monto,tipo:sv.tipo}).eq('id',sv.sid);
+        await db.from('historial_montos').insert({paciente_id:pacienteId,servicio_id:parseInt(sv.sid),tipo_servicio:sv.tipo,monto:sv.monto,fecha:today(),motivo:'Actualización de monto'});
+      } else if(prev){
+        await db.from('servicios').update({tipo:sv.tipo}).eq('id',sv.sid);
+      }
+    } else {
+      // Insert new
+      const {data:newSv}=await db.from('servicios').insert({paciente_id:pacienteId,tipo:sv.tipo,monto_actual:sv.monto,activo:true}).select().single();
+      if(newSv)await db.from('historial_montos').insert({paciente_id:pacienteId,servicio_id:newSv.id,tipo_servicio:sv.tipo,monto:sv.monto,fecha:today(),motivo:'Monto inicial'});
+    }
+  }
+  
+  // Deactivate removed services
+  const newSids=servicios.filter(s=>s.sid).map(s=>parseInt(s.sid));
+  for(const eid of existingIds){
+    if(!newSids.includes(eid)){
+      await db.from('servicios').update({activo:false}).eq('id',eid);
+    }
+  }
+}
+
 function renderPagosGlobal(){
   const el=document.getElementById('pagos-c');
   const venc=pacientes.filter(p=>estadoPago(p)==='Pago vencido'),porV=pacientes.filter(p=>estadoPago(p)==='Por vencer'),alD=pacientes.filter(p=>estadoPago(p)==='Al día'),sinP=pacientes.filter(p=>estadoPago(p)==='Sin pagos');
   const total=pacientes.reduce((a,p)=>(pagosCache[p.id]||[]).reduce((b,pg)=>b+(pg.monto||0),0)+a,0);
-  const row=p=>{const pgs=pagosCache[p.id]||[];const ult=pgs.length?fmtShort(pgs[pgs.length-1].fecha):'—';return`<div class="card" style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><div class="avatar">${inic(p.nombre)}</div><div style="flex:1"><p style="font-weight:500;font-size:13px">${p.nombre}</p><p style="font-size:12px;color:#888;margin-top:2px">Último pago: ${ult} · Ciclo: ${p.ciclo} días</p><p style="font-size:12px;margin-top:2px">Próximo cobro: ${fmtProxCobro(p)}</p></div><span class="badge ${estadoBadge(p)}">${estadoPago(p)}</span><button class="btn-s btn-sm" onclick="verP(${p.id});setTimeout(()=>showDTab('dt-pag',document.querySelectorAll('.dtab')[3]),150)">Ver pagos</button></div>`;};
+  const row=p=>{const pgs=pagosCache[p.id]||[];const ult=pgs.length?fmtShort(pgs[pgs.length-1].fecha):'—';return`<div class="card" style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><div class="avatar">${inic(p.nombre)}</div><div style="flex:1"><p style="font-weight:500;font-size:13px">${p.nombre}</p><p style="font-size:12px;color:#888;margin-top:2px">Último pago: ${ult} · Ciclo: ${p.ciclo} días ${totalServicios(p.id)?'· Total: <strong>$'+totalServicios(p.id).toLocaleString('es-AR')+'</strong>':''}</p><p style="font-size:12px;margin-top:2px">Próximo cobro: ${fmtProxCobro(p)}</p></div><span class="badge ${estadoBadge(p)}">${estadoPago(p)}</span><button class="btn-s btn-sm" onclick="verP(${p.id});setTimeout(()=>showDTab('dt-pag',document.querySelectorAll('.dtab')[3]),150)">Ver pagos</button></div>`;};
   el.innerHTML=`<div class="stat-row" style="margin-bottom:20px"><div class="stat"><div class="stat-l">Total cobrado</div><div class="stat-v" style="font-size:18px">$${total.toLocaleString('es-AR')}</div></div><div class="stat"><div class="stat-l">Pagos vencidos</div><div class="stat-v" style="color:#a32d2d">${venc.length}</div></div><div class="stat"><div class="stat-l">Por vencer</div><div class="stat-v" style="color:#854f0b">${porV.length}</div></div></div>`+
   (venc.length?`<p style="font-size:11px;font-weight:600;color:#a32d2d;margin-bottom:10px;text-transform:uppercase">Pagos vencidos</p>`+venc.map(row).join(''):'')+
   (porV.length?`<p style="font-size:11px;font-weight:600;color:#854f0b;margin-bottom:10px;margin-top:14px;text-transform:uppercase">Por vencer</p>`+porV.map(row).join(''):'')+
