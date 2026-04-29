@@ -569,7 +569,7 @@ async function guardarP(){
   const n=document.getElementById('np-n').value.trim();
   if(!n){alert('El nombre es obligatorio.');return;}
   const id=document.getElementById('np-id').value;
-  const datos={nombre:n,dni:document.getElementById('np-d').value.trim()||null,fnac:document.getElementById('np-f').value||null,inicio:document.getElementById('np-inicio').value||null,os:document.getElementById('np-os').value.trim()||null,escuela:document.getElementById('np-esc').value.trim()||null,dx:document.getElementById('np-dx').value.trim()||null,familia:document.getElementById('np-fam').value.trim()||null,ciclo:parseInt(document.getElementById('np-ciclo').value),prox_cobro:document.getElementById('np-prox-cobro').value||null,monto_actual:parseFloat(document.getElementById('np-monto').value)||null,turnos:getTurnos()};
+  const datos={nombre:n,dni:document.getElementById('np-d').value.trim()||null,fnac:document.getElementById('np-f').value||null,inicio:document.getElementById('np-inicio').value||null,os:document.getElementById('np-os').value.trim()||null,escuela:document.getElementById('np-esc').value.trim()||null,dx:document.getElementById('np-dx').value.trim()||null,familia:document.getElementById('np-fam').value.trim()||null,ciclo:parseInt(document.getElementById('np-ciclo').value),prox_cobro:document.getElementById('np-prox-cobro').value||null,turnos:getTurnos()};
   const {error}=id?await db.from('pacientes').update(datos).eq('id',id):await db.from('pacientes').insert(datos);
   if(error){alert('Error al guardar: '+error.message);return;}
   // Guardar servicios
