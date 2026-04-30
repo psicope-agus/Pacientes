@@ -143,6 +143,28 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
 .login-btn{width:100%;padding:11px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;margin-top:4px}
 .login-btn:hover{background:#333}
 .login-btn:disabled{background:#999;cursor:not-allowed}
+
+.archivo-card{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid #e8e6e0;border-radius:10px;margin-bottom:8px;background:#fff}
+.archivo-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.archivo-icon.foto{background:#faeeda}
+.archivo-icon.pdf{background:#fcebeb}
+.archivo-icon.doc{background:#e6f1fb}
+.archivo-icon.otro{background:#f1efe8}
+.archivo-info{flex:1;min-width:0}
+.archivo-nombre{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.archivo-meta{font-size:11px;color:#888;margin-top:2px}
+.upload-area{border:2px dashed #d0cec8;border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px}
+.upload-area:hover{border-color:#888;background:#f8f7f4}
+.upload-area input[type=file]{display:none}
+.upload-progress{background:#f8f7f4;border:1px solid #e8e6e0;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:10px;display:none}
+.progress-bar{height:6px;background:#e8e6e0;border-radius:3px;margin-top:6px;overflow:hidden}
+.progress-fill{height:100%;background:#1a1a1a;border-radius:3px;transition:width .3s}
+.cat-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.cat-chip{padding:4px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid #d0cec8;background:none;color:#666}
+.cat-chip.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.foto-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.foto-thumb{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid #e8e6e0}
+@media(max-width:640px){.foto-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -250,6 +272,7 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
       <div class="fg full"><label>Composición familiar</label><textarea id="np-fam" placeholder="Ej: Vive con mamá y papá..."></textarea></div>
       <div class="fg"><label>Inicio del acompañamiento</label><input type="date" id="np-inicio"></div>
       <div class="fg"><label>Ciclo de pago (cobros posteriores)</label><select id="np-ciclo"><option value="30">Cada 30 días</option><option value="60">Cada 60 días</option><option value="90">Cada 90 días</option></select></div>
+      <div class="fg"><label>Módulos por sesión</label><input type="number" id="np-modulos" min="1" max="10" value="1" placeholder="Ej: 2"></div>
       <div class="fg"><label>Próximo cobro estimado</label><input type="date" id="np-prox-cobro"></div>
       <div class="fg full">
         <label>Servicios y montos</label>
@@ -282,6 +305,7 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
       <button class="dtab" onclick="showDTab('dt-pag',this)">Pagos</button>
       <button class="dtab" onclick="showDTab('dt-asis',this)">Asistencia</button>
       <button class="dtab" onclick="showDTab('dt-montos',this);loadHistorialMontos()">Montos</button>
+      <button class="dtab" onclick="showDTab('dt-archivos',this);loadArchivos()">Archivos</button>
     </div>
     <div id="dt-info" class="dtsec vis"></div>
     <div id="dt-ses" class="dtsec">
@@ -298,6 +322,7 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
     </div>
     <div id="dt-asis" class="dtsec"><div id="det-asis-c"></div></div>
     <div id="dt-montos" class="dtsec"><div id="det-montos-c"><div class="loading">Cargando...</div></div></div>
+    <div id="dt-archivos" class="dtsec"><div id="det-archivos-c"><div class="loading">Cargando...</div></div></div>
     <div class="mactions"><button class="btn-s" onclick="closeMo('mo-det')">Cerrar</button></div>
   </div>
 </div>
@@ -495,6 +520,7 @@ function abrirFormPaciente(p=null){
       proxCobro=ini.toISOString().split('T')[0];
     }
   }
+  document.getElementById('np-modulos').value=p?p.modulos||1:1;
   document.getElementById('np-prox-cobro').value=proxCobro;
   // Cargar servicios
   document.getElementById('servicios-container').innerHTML='';
@@ -569,7 +595,7 @@ async function guardarP(){
   const n=document.getElementById('np-n').value.trim();
   if(!n){alert('El nombre es obligatorio.');return;}
   const id=document.getElementById('np-id').value;
-  const datos={nombre:n,dni:document.getElementById('np-d').value.trim()||null,fnac:document.getElementById('np-f').value||null,inicio:document.getElementById('np-inicio').value||null,os:document.getElementById('np-os').value.trim()||null,escuela:document.getElementById('np-esc').value.trim()||null,dx:document.getElementById('np-dx').value.trim()||null,familia:document.getElementById('np-fam').value.trim()||null,ciclo:parseInt(document.getElementById('np-ciclo').value),prox_cobro:document.getElementById('np-prox-cobro').value||null,turnos:getTurnos()};
+  const datos={nombre:n,dni:document.getElementById('np-d').value.trim()||null,fnac:document.getElementById('np-f').value||null,inicio:document.getElementById('np-inicio').value||null,os:document.getElementById('np-os').value.trim()||null,escuela:document.getElementById('np-esc').value.trim()||null,dx:document.getElementById('np-dx').value.trim()||null,familia:document.getElementById('np-fam').value.trim()||null,ciclo:parseInt(document.getElementById('np-ciclo').value),modulos:parseInt(document.getElementById('np-modulos').value)||1,prox_cobro:document.getElementById('np-prox-cobro').value||null,turnos:getTurnos()};
   const {error}=id?await db.from('pacientes').update(datos).eq('id',id):await db.from('pacientes').insert(datos);
   if(error){alert('Error al guardar: '+error.message);return;}
   // Guardar servicios
@@ -606,6 +632,7 @@ async function verP(id){
       <div class="ii"><label>Tiempo de acompañamiento</label><p>${dur||'-'}</p></div>
       <div class="ii"><label>Estado de pago</label><p><span class="badge ${estadoBadge(p)}">${estadoPago(p)}</span></p></div>
       <div class="ii"><label>Próximo cobro estimado</label><p style="${proxCobroVencido(p)?'color:#a32d2d;font-weight:500':''}">${p.prox_cobro?fmtDate(p.prox_cobro):'No definido'}</p></div>
+      <div class="ii"><label>Módulos por sesión</label><p>${p.modulos||1} módulo${(p.modulos||1)>1?'s':''}</p></div>
       <div class="ii" style="grid-column:1/-1"><label>Turnos</label><div style="margin-top:6px">${renderTurnosInfo(p.turnos)}</div></div>
     </div>`;
   await Promise.all([renderSesionesD(p),renderPagosD(p),renderRegPacienteD(p)]);
@@ -954,68 +981,187 @@ function calcularCobro(){
   const svSel=document.getElementById('pag-sv');
   const svId=svSel.value?parseInt(svSel.value):null;
   const svs=serviciosCache[curPId]||[];
-  
+  const p=pacientes.find(x=>x.id===curPId);
+  const modulos=p?p.modulos||1:1;
+
   // Filtrar sesiones del mes (presentes y justificadas)
   const todasSes=sesionesCache[curPId]||[];
   const sesDelMes=todasSes.filter(s=>{
     const d=new Date(s.fecha+'T12:00');
     return d.getFullYear()===anio&&d.getMonth()+1===mes&&(s.asistencia==='Presente'||s.asistencia==='Justificado');
   });
-  
   const totalSes=sesDelMes.length;
-  
+  const totalModulos=totalSes*modulos;
+
   // Calcular por servicio
   let calcHtml='';
   let totalCalculado=0;
-  
+
   if(svId){
-    // Un servicio específico
     const sv=svs.find(x=>x.id===svId);
     if(sv){
-      const montoPorSes=sv.monto_actual||0;
-      const subtotal=totalSes*montoPorSes;
+      const montoPorMod=sv.monto_actual||0;
+      const subtotal=totalModulos*montoPorMod;
       totalCalculado=subtotal;
-      calcHtml=`<div style="padding:4px 0">
-        <div style="display:flex;justify-content:space-between;font-size:13px">
-          <span>${sv.tipo}</span>
-          <span>${totalSes} sesiones × $${montoPorSes.toLocaleString('es-AR')} = <strong>$${subtotal.toLocaleString('es-AR')}</strong></span>
-        </div>
+      calcHtml=`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
+        <span>${sv.tipo}</span>
+        <span>${totalSes} ses. × ${modulos} mód. × $${montoPorMod.toLocaleString('es-AR')} = <strong>$${subtotal.toLocaleString('es-AR')}</strong></span>
       </div>`;
     }
   } else {
-    // Todos los servicios — asumimos mismas sesiones para todos
     svs.forEach(sv=>{
-      const montoPorSes=sv.monto_actual||0;
-      const subtotal=totalSes*montoPorSes;
+      const montoPorMod=sv.monto_actual||0;
+      const subtotal=totalModulos*montoPorMod;
       totalCalculado+=subtotal;
-      calcHtml+=`<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid #e8e6e0">
+      calcHtml+=`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid #e8e6e0">
         <span style="color:#666">${sv.tipo}</span>
-        <span>${totalSes} ses. × $${montoPorSes.toLocaleString('es-AR')} = $${subtotal.toLocaleString('es-AR')}</span>
+        <span>${totalSes} ses. × ${modulos} mód. × $${montoPorMod.toLocaleString('es-AR')} = $${subtotal.toLocaleString('es-AR')}</span>
       </div>`;
     });
   }
-  
+
   const el=document.getElementById('pag-calculo');
   if(totalSes===0){
     el.style.display='block';
-    el.innerHTML=`<div style="background:#faeeda;border:1px solid #f0d5a0;border-radius:8px;padding:10px 14px;font-size:13px;color:#633806">No hay sesiones presentes o justificadas en este mes para calcular.</div>`;
+    el.innerHTML=`<div style="background:#faeeda;border:1px solid #f0d5a0;border-radius:8px;padding:10px 14px;font-size:13px;color:#633806">⚠️ No hay sesiones presentes o justificadas en este mes para calcular.</div>`;
     document.getElementById('pag-m').value='';
     return;
   }
-  
+
   el.style.display='block';
   el.innerHTML=`<div style="background:#f8f7f4;border:1px solid #e8e6e0;border-radius:10px;padding:12px 14px;margin-bottom:4px">
     <p style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Cálculo del mes</p>
+    <div style="font-size:12px;color:#888;margin-bottom:8px">📋 ${totalSes} sesión${totalSes>1?'es':''} × ${modulos} módulo${modulos>1?'s':''} = ${totalModulos} módulos cobrables</div>
     ${calcHtml}
-    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:600;margin-top:8px;padding-top:8px;border-top:1px solid #d0cec8">
+    <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600;margin-top:10px;padding-top:10px;border-top:1px solid #d0cec8">
       <span>Total calculado</span>
       <span style="color:#1a1a1a">$${totalCalculado.toLocaleString('es-AR')}</span>
     </div>
-    <p style="font-size:11px;color:#888;margin-top:6px">${totalSes} sesión${totalSes>1?'es':''} cobrable${totalSes>1?'s':''} (presentes + justificadas)</p>
   </div>`;
-  
-  // Auto-fill monto
+
   document.getElementById('pag-m').value=totalCalculado;
+}
+
+
+// ─── ARCHIVOS ────────────────────────────────────────────
+let archivoFiltro='todos';
+
+function getIconArchivo(tipo,cat){
+  if(cat==='foto'||tipo.startsWith('image/'))return{icon:'🖼️',cls:'foto'};
+  if(tipo==='application/pdf')return{icon:'📄',cls:'pdf'};
+  if(tipo.includes('word')||tipo.includes('document'))return{icon:'📝',cls:'doc'};
+  return{icon:'📎',cls:'otro'};
+}
+
+async function loadArchivos(){
+  if(!curPId)return;
+  const el=document.getElementById('det-archivos-c');
+  const {data,error}=await db.from('archivos').select('*').eq('paciente_id',curPId).order('created_at',{ascending:false});
+  if(error){el.innerHTML='<div class="empty">Error al cargar archivos.</div>';return;}
+  const archivos=data||[];
+
+  const cats=['todos','foto','informe','documento','otro'];
+  const catLabels={todos:'Todos',foto:'Fotos',informe:'Informes',documento:'Documentos',otro:'Otros'};
+  
+  const filtered=archivoFiltro==='todos'?archivos:archivos.filter(a=>a.categoria===archivoFiltro);
+  const fotos=filtered.filter(a=>a.categoria==='foto');
+  const docs=filtered.filter(a=>a.categoria!=='foto');
+
+  const catsHtml=cats.map(c=>`<button class="cat-chip${archivoFiltro===c?' active':''}" onclick="archivoFiltro='${c}';loadArchivos()">${catLabels[c]} ${c==='todos'?'('+archivos.length+')':'('+archivos.filter(a=>c==='todos'||a.categoria===c).length+')'}</button>`).join('');
+
+  const fotosHtml=fotos.length?`
+    <div class="foto-grid">
+      ${fotos.map(a=>`<img src="${a.url||''}" class="foto-thumb" onclick="verArchivo('${a.storage_path}','${a.nombre}')" onerror="this.style.display='none'" alt="${a.nombre}">`).join('')}
+    </div>`:'';
+
+  const docsHtml=docs.map(a=>{
+    const {icon,cls}=getIconArchivo(a.tipo,a.categoria);
+    return`<div class="archivo-card">
+      <div class="archivo-icon ${cls}">${icon}</div>
+      <div class="archivo-info">
+        <p class="archivo-nombre">${a.nombre}</p>
+        <p class="archivo-meta">${catLabels[a.categoria]||a.categoria} · ${new Date(a.created_at).toLocaleDateString('es-AR')}</p>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-s btn-sm" onclick="descargarArchivo('${a.storage_path}','${a.nombre}')">⬇</button>
+        <button class="btn-s btn-sm" style="color:#a32d2d" onclick="eliminarArchivo(${a.id},'${a.storage_path}')">×</button>
+      </div>
+    </div>`;}).join('');
+
+  el.innerHTML=`
+    <div class="upload-area" onclick="document.getElementById('file-input-${curPId}').click()">
+      <input type="file" id="file-input-${curPId}" multiple accept="image/*,.pdf,.doc,.docx" onchange="subirArchivos(this)">
+      <p style="font-size:22px;margin-bottom:6px">📁</p>
+      <p style="font-size:13px;font-weight:500">Tocá para subir archivos</p>
+      <p style="font-size:12px;color:#888;margin-top:4px">Fotos, PDFs, documentos Word</p>
+    </div>
+    <div id="upload-progress-${curPId}" class="upload-progress">
+      <p style="font-size:13px" id="upload-txt-${curPId}">Subiendo...</p>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill-${curPId}" style="width:0%"></div></div>
+    </div>
+    <div class="cat-chips">${catsHtml}</div>
+    ${filtered.length===0?'<div class="empty">No hay archivos en esta categoría.</div>':fotosHtml+docsHtml}`;
+
+  // Load signed URLs for photos
+  for(const foto of fotos){
+    const {data:urlData}=await db.storage.from('archivos').createSignedUrl(foto.storage_path,3600);
+    if(urlData){
+      const img=el.querySelector(`img[alt="${foto.nombre}"]`);
+      if(img){img.src=urlData.signedUrl;img.style.display='block';}
+    }
+  }
+}
+
+async function subirArchivos(input){
+  const files=Array.from(input.files);
+  if(!files.length||!curPId)return;
+  const prog=document.getElementById(`upload-progress-${curPId}`);
+  const fill=document.getElementById(`progress-fill-${curPId}`);
+  const txt=document.getElementById(`upload-txt-${curPId}`);
+  prog.style.display='block';
+
+  for(let i=0;i<files.length;i++){
+    const file=files[i];
+    txt.textContent=`Subiendo ${file.name} (${i+1}/${files.length})...`;
+    fill.style.width=`${Math.round((i/files.length)*100)}%`;
+    
+    // Detect category
+    let categoria='otro';
+    if(file.type.startsWith('image/'))categoria='foto';
+    else if(file.type==='application/pdf')categoria='informe';
+    else if(file.type.includes('word')||file.name.endsWith('.docx')||file.name.endsWith('.doc'))categoria='documento';
+
+    const path=`${curPId}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+    const {error:upErr}=await db.storage.from('archivos').upload(path,file);
+    if(upErr){toast('Error al subir '+file.name);continue;}
+    
+    await db.from('archivos').insert({paciente_id:curPId,nombre:file.name,tipo:file.type,categoria,storage_path:path});
+  }
+
+  fill.style.width='100%';
+  txt.textContent='¡Listo!';
+  setTimeout(()=>{prog.style.display='none';},1000);
+  input.value='';
+  toast(`${files.length} archivo${files.length>1?'s':''} subido${files.length>1?'s':''} ✓`);
+  loadArchivos();
+}
+
+async function verArchivo(path,nombre){
+  const {data}=await db.storage.from('archivos').createSignedUrl(path,3600);
+  if(data)window.open(data.signedUrl,'_blank');
+}
+
+async function descargarArchivo(path,nombre){
+  const {data}=await db.storage.from('archivos').createSignedUrl(path,60);
+  if(data){const a=document.createElement('a');a.href=data.signedUrl;a.download=nombre;a.click();}
+}
+
+async function eliminarArchivo(id,path){
+  if(!confirm('¿Eliminar este archivo?'))return;
+  await db.storage.from('archivos').remove([path]);
+  await db.from('archivos').delete().eq('id',id);
+  toast('Archivo eliminado');
+  loadArchivos();
 }
 
 function renderPagosGlobal(){
