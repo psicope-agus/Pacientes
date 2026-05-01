@@ -183,11 +183,10 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
 
 <nav class="bottom-nav">
   <button class="bn-btn active" id="bn-pacientes" onclick="showSec('pacientes',this,true)"><span class="icon">👤</span>Pacientes</button>
-  <button class="bn-btn" id="bn-agenda" onclick="showSec('agenda',this,true)"><span class="icon">📅</span>Agenda</button>
   <button class="bn-btn" id="bn-asistencia" onclick="showSec('asistencia',this,true)"><span class="icon">✓</span>Asistencia</button>
   <button class="bn-btn" id="bn-registro" onclick="showSec('registro',this,true)"><span class="icon">📓</span>Registro</button>
   <button class="bn-btn" id="bn-pagos" onclick="showSec('pagos',this,true)"><span class="icon">💰</span>Pagos</button>
-  <div class="bn-wrap"><button class="bn-btn" id="bn-tareas" onclick="showSec('tareas',this,true)"><span class="icon">☑</span>Tareas</button><span id="bn-badge-tareas" class="bn-badge" style="display:none">0</span></div>
+  <div class="bn-wrap"><button class="bn-btn" id="bn-tareas" onclick="showSec('tareas',this,true)"><span class="icon">📆</span>Agenda</button><span id="bn-badge-tareas" class="bn-badge" style="display:none">0</span></div>
 <button class="bn-btn" onclick="cerrarSesion()"><span class="icon">🚪</span>Salir</button>
 </nav>
 <div class="app" id="main-app" style="display:none">
@@ -195,11 +194,10 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
   <div class="sidebar-logo">🧠 Mi Consultorio</div>
   <div style="margin-top:auto;padding:8px;border-top:1px solid #e8e6e0;position:absolute;bottom:0;left:0;right:0;background:#fff"><button class="sb" onclick="cerrarSesion()" style="color:#a32d2d;width:calc(100% - 0px);margin:0"><span>🚪</span> Cerrar sesión</button></div>
   <button class="sb active" onclick="showSec('pacientes',this)"><span>👤</span> Pacientes</button>
-  <button class="sb" onclick="showSec('agenda',this)"><span>📅</span> Agenda</button>
   <button class="sb" onclick="showSec('asistencia',this)"><span>✓</span> Asistencia</button>
   <button class="sb" onclick="showSec('registro',this)"><span>📓</span> Registro diario</button>
   <button class="sb" onclick="showSec('pagos',this)"><span>💰</span> Pagos</button>
-  <button class="sb" id="sb-tareas" onclick="showSec('tareas',this)"><span>☑</span> Tareas <span id="badge-tareas" class="sb-badge" style="display:none">0</span></button>
+  <button class="sb" id="sb-tareas" onclick="showSec('tareas',this)"><span>📆</span> Agenda <span id="badge-tareas" class="sb-badge" style="display:none">0</span></button>
 </nav>
 <div class="main">
 
@@ -209,10 +207,7 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
   <div id="lista-p"><div class="loading">Cargando pacientes...</div></div>
 </div>
 
-<div id="sec-agenda" class="sec">
-  <div class="hrow"><span class="ptitle">Agenda semanal</span></div>
-  <div id="agenda-c"></div>
-</div>
+
 
 <div id="sec-asistencia" class="sec">
   <div class="hrow">
@@ -245,13 +240,22 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
 </div>
 
 <div id="sec-tareas" class="sec">
-  <div class="hrow"><span class="ptitle">Tareas pendientes</span><button class="btn-p" onclick="openMo('mo-tarea')">+ Nueva tarea</button></div>
-  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap" id="task-filtros">
-    <button class="seg-btn active" onclick="filtrarTasks('todas',this)" style="border:1px solid #d0cec8;border-radius:8px">Todas</button>
-    <button class="seg-btn" onclick="filtrarTasks('pendiente',this)" style="border:1px solid #d0cec8;border-radius:8px">Pendientes</button>
-    <button class="seg-btn" onclick="filtrarTasks('hecha',this)" style="border:1px solid #d0cec8;border-radius:8px">Completadas</button>
+  <div class="hrow"><span class="ptitle">Agenda</span><button class="btn-p" onclick="openMo('mo-tarea')">+ Nueva tarea</button></div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <div class="seg-ctrl">
+      <button class="seg-btn active" onclick="setAgendaView('semana',this)">Semana</button>
+      <button class="seg-btn" onclick="setAgendaView('tareas',this)">Tareas</button>
+    </div>
   </div>
-  <div id="tasks-c"><div class="loading">Cargando tareas...</div></div>
+  <div id="agenda-semana-v"><div id="agenda-semana-c"></div></div>
+  <div id="agenda-tareas-v" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap" id="task-filtros">
+      <button class="seg-btn active" onclick="filtrarTasks('todas',this)" style="border:1px solid #d0cec8;border-radius:8px">Todas</button>
+      <button class="seg-btn" onclick="filtrarTasks('pendiente',this)" style="border:1px solid #d0cec8;border-radius:8px">Pendientes</button>
+      <button class="seg-btn" onclick="filtrarTasks('hecha',this)" style="border:1px solid #d0cec8;border-radius:8px">Completadas</button>
+    </div>
+    <div id="tasks-c"><div class="loading">Cargando tareas...</div></div>
+  </div>
 </div>
 
 </div>
@@ -363,7 +367,8 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
 <!-- MODAL REGISTRO -->
 <div class="mo" id="mo-reg">
   <div class="modal" style="width:500px">
-    <p class="mtitle">Nueva entrada de registro</p>
+    <p class="mtitle" id="mo-reg-titulo">Nueva entrada de registro</p>
+    <input type="hidden" id="reg-id">
     <div class="fg"><label>Fecha</label><input type="date" id="reg-f"></div>
     <div class="fg"><label>Tipo</label><select id="reg-tipo" onchange="toggleRegPaciente()"><option value="general">Nota general</option><option value="paciente">Nota sobre paciente</option></select></div>
     <div class="fg" id="reg-pac-sel" style="display:none"><label>Paciente</label><select id="reg-pac-id"></select></div>
@@ -456,7 +461,7 @@ function openMo(id){
     document.getElementById('pag-m').value='';
     calcularCobro();
   }
-  if(id==='mo-reg'){fillPacSelects();if(!document.getElementById('reg-f').value)document.getElementById('reg-f').value=today();}
+  if(id==='mo-reg'){fillPacSelects();if(!document.getElementById('reg-f').value)document.getElementById('reg-f').value=today();document.getElementById('reg-id').value='';document.getElementById('mo-reg-titulo').textContent='Nueva entrada de registro';}
   if(id==='mo-tarea')fillPacSelects();
 }
 function closeMo(id){document.getElementById(id).classList.remove('open');}
@@ -480,7 +485,7 @@ function showSec(name,btn,isMobile=false){
   btn.classList.add('active');
   const other=isMobile?document.querySelector('.sb[onclick*=\"\'+name+\'\"]'):document.getElementById('bn-'+name);
   if(other)other.classList.add('active');
-  if(name==='agenda')renderAgenda();
+  if(name==='tareas'){setAgendaView('semana',document.querySelector('#sec-tareas .seg-btn'));}
   if(name==='asistencia'){document.getElementById('fecha-asi').value=today();renderAsi();}
   if(name==='pagos')renderPagosGlobal();
   if(name==='tareas')renderTasks();
@@ -698,10 +703,23 @@ async function guardarReg(){
   const txt=document.getElementById('reg-txt').value.trim();if(!txt)return;
   const tipo=document.getElementById('reg-tipo').value;
   const pacId=tipo==='paciente'?parseInt(document.getElementById('reg-pac-id').value):null;
-  const {data,error}=await db.from('registros').insert({fecha:document.getElementById('reg-f').value,tipo,paciente_id:pacId||null,etiqueta:document.getElementById('reg-etiq').value||null,texto:txt}).select().single();
-  if(error){alert('Error: '+error.message);return;}
-  registros.unshift(data);document.getElementById('reg-txt').value='';
-  closeMo('mo-reg');toast('Registro guardado ✓');renderReg();
+  const editId=document.getElementById('reg-id').value;
+  const datos={fecha:document.getElementById('reg-f').value,tipo,paciente_id:pacId||null,etiqueta:document.getElementById('reg-etiq').value||null,texto:txt};
+  if(editId){
+    const {error}=await db.from('registros').update(datos).eq('id',editId);
+    if(error){alert('Error: '+error.message);return;}
+    const idx=registros.findIndex(r=>r.id==editId);
+    if(idx>=0)registros[idx]={...registros[idx],...datos};
+    toast('Registro actualizado ✓');
+  } else {
+    const {data,error}=await db.from('registros').insert(datos).select().single();
+    if(error){alert('Error: '+error.message);return;}
+    registros.unshift(data);
+    toast('Registro guardado ✓');
+  }
+  document.getElementById('reg-txt').value='';
+  document.getElementById('reg-id').value='';
+  closeMo('mo-reg');renderReg();
   if(curPId&&tipo==='paciente'&&pacId===curPId)renderRegPacienteD(pacientes.find(x=>x.id===curPId));
 }
 
@@ -713,9 +731,24 @@ async function eliminarReg(id){
 
 function regEntry(r){
   const p=r.paciente_id?pacientes.find(x=>x.id===r.paciente_id):null;
-  return`<div class="reg-entry"><div class="reg-head"><span class="reg-date">${fmtDate(r.fecha)}</span><div style="display:flex;gap:6px;align-items:center">${r.etiqueta?`<span class="badge b-info">${r.etiqueta}</span>`:''} ${p?`<span class="badge b-gray">${p.nombre}</span>`:''}<button class="task-del" onclick="eliminarReg(${r.id})">×</button></div></div><p style="font-size:13px;line-height:1.6">${r.texto}</p></div>`;
+  return`<div class="reg-entry"><div class="reg-head"><span class="reg-date">${fmtDate(r.fecha)}</span><div style="display:flex;gap:6px;align-items:center">${r.etiqueta?`<span class="badge b-info">${r.etiqueta}</span>`:''} ${p?`<span class="badge b-gray">${p.nombre}</span>`:''}<button class="btn-edit btn-sm" onclick="editarReg(${r.id})" style="padding:2px 8px;font-size:11px">✏️</button><button class="task-del" onclick="eliminarReg(${r.id})">×</button></div></div><p style="font-size:13px;line-height:1.6">${r.texto}</p></div>`;
 }
 
+
+function editarReg(id){
+  const r=registros.find(x=>x.id===id);
+  if(!r)return;
+  fillPacSelects();
+  document.getElementById('reg-id').value=id;
+  document.getElementById('reg-f').value=r.fecha||'';
+  document.getElementById('reg-tipo').value=r.tipo||'general';
+  toggleRegPaciente();
+  if(r.paciente_id)document.getElementById('reg-pac-id').value=r.paciente_id;
+  document.getElementById('reg-etiq').value=r.etiqueta||'';
+  document.getElementById('reg-txt').value=r.texto||'';
+  document.getElementById('mo-reg-titulo').textContent='Editar registro';
+  document.getElementById('mo-reg').classList.add('open');
+}
 function filtrarReg(f,btn){regFilter=f;document.querySelectorAll('#reg-filtros .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderReg();}
 function renderReg(){
   const el=document.getElementById('reg-c');
@@ -776,26 +809,7 @@ function renderTasks(){
     </div>`;}).join('');
 }
 
-function renderAgenda(){
-  const el=document.getElementById('agenda-c');let html='';
-  DIAS.forEach(dia=>{
-    const ps=pacientes.filter(p=>(p.turnos||[]).some(t=>t.dia===dia));
-    if(!ps.length)return;
-    html+=`<p style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px">${dia}</p>`;
-    const filas=[];
-    ps.forEach(p=>(p.turnos||[]).filter(t=>t.dia===dia).forEach(t=>filas.push({p,t})));
-    filas.sort((a,b)=>(a.t.inicio||'').localeCompare(b.t.inicio||''));
-    filas.forEach(({p,t})=>{
-      html+=`<div class="card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:6px">
-        <span style="font-weight:600;font-size:13px;min-width:100px">${t.inicio||'--:--'}${t.fin?' → '+t.fin:''}</span>
-        <div class="avatar" style="width:28px;height:28px;font-size:10px">${inic(p.nombre)}</div>
-        <span style="flex:1;font-size:13px">${p.nombre}</span>
-        <button class="btn-s btn-sm" onclick="verP(${p.id})">Ver</button>
-      </div>`;
-    });
-  });
-  el.innerHTML=html||'<div class="empty">No hay turnos asignados.</div>';
-}
+
 
 function setAsiView(v,btn){
   asiView=v;
@@ -1164,6 +1178,58 @@ async function eliminarArchivo(id,path){
   loadArchivos();
 }
 
+
+let agendaView='semana';
+function setAgendaView(v,btn){
+  agendaView=v;
+  document.querySelectorAll('#sec-tareas .seg-ctrl .seg-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.getElementById('agenda-semana-v').style.display=v==='semana'?'block':'none';
+  document.getElementById('agenda-tareas-v').style.display=v==='tareas'?'block':'none';
+  if(v==='semana')renderAgendaSemana();
+  if(v==='tareas')renderTasks();
+}
+
+function renderAgendaSemana(){
+  const el=document.getElementById('agenda-semana-c');
+  let html='';
+  DIAS.forEach(dia=>{
+    const ps=pacientes.filter(p=>(p.turnos||[]).some(t=>t.dia===dia));
+    if(!ps.length)return;
+    html+=`<p style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px">${dia}</p>`;
+    const filas=[];
+    ps.forEach(p=>(p.turnos||[]).filter(t=>t.dia===dia).forEach(t=>filas.push({p,t})));
+    filas.sort((a,b)=>(a.t.inicio||'').localeCompare(b.t.inicio||''));
+    filas.forEach(({p,t})=>{
+      html+=`<div class="card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:6px">
+        <span style="font-weight:600;font-size:13px;min-width:100px">${t.inicio||'--:--'}${t.fin?' → '+t.fin:''}</span>
+        <div class="avatar" style="width:28px;height:28px;font-size:10px">${inic(p.nombre)}</div>
+        <span style="flex:1;font-size:13px">${p.nombre}</span>
+        <button class="btn-s btn-sm" onclick="verP(${p.id})">Ver</button>
+      </div>`;
+    });
+  });
+
+  // Show upcoming tasks
+  const hoy=new Date();
+  const proxTareas=tasks.filter(t=>t.estado==='pendiente'&&t.fecha_vencimiento).sort((a,b)=>a.fecha_vencimiento.localeCompare(b.fecha_vencimiento)).slice(0,5);
+  if(proxTareas.length){
+    html+=`<p style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin:20px 0 8px">Próximas tareas</p>`;
+    proxTareas.forEach(t=>{
+      const pac=t.paciente_id?pacientes.find(x=>x.id===t.paciente_id):null;
+      const venc=new Date(t.fecha_vencimiento+'T12:00')<hoy;
+      html+=`<div class="card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:6px">
+        <span style="font-size:18px">${venc?'🔴':'🟡'}</span>
+        <div style="flex:1">
+          <p style="font-size:13px;font-weight:500">${t.tipo}${t.descripcion?': '+t.descripcion:''}</p>
+          <p style="font-size:12px;color:#888">${fmtDate(t.fecha_vencimiento)}${pac?' · '+pac.nombre:''}</p>
+        </div>
+        <div class="task-check ${t.estado==='hecha'?'done':''}" onclick="toggleTask(${t.id})" style="cursor:pointer"></div>
+      </div>`;
+    });
+  }
+  el.innerHTML=html||'<div class="empty">No hay turnos ni tareas próximas.</div>';
+}
 function renderPagosGlobal(){
   const el=document.getElementById('pagos-c');
   const venc=pacientes.filter(p=>estadoPago(p)==='Pago vencido'),porV=pacientes.filter(p=>estadoPago(p)==='Por vencer'),alD=pacientes.filter(p=>estadoPago(p)==='Al día'),sinP=pacientes.filter(p=>estadoPago(p)==='Sin pagos');
