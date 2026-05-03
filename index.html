@@ -166,6 +166,30 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
 .foto-thumb{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid #e8e6e0}
 @media(max-width:640px){.foto-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "ae7e90b2-29ca-45ae-8e8f-86d40384b19b",
+      safari_web_id: "web.onesignal.auto.665e4130-cb92-443f-ad4d-8156961c0995",
+      notifyButton: { enable: false },
+      promptOptions: {
+        slidedown: {
+          prompts: [{
+            type: "push",
+            autoPrompt: false,
+            text: {
+              actionMessage: "Activá las notificaciones para recibir recordatorios de tu consultorio.",
+              acceptButton: "Activar",
+              cancelButton: "Ahora no"
+            }
+          }]
+        }
+      }
+    });
+  });
+</script>
 </head>
 <body>
 
@@ -192,7 +216,7 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#1a1a1a
 <div class="app" id="main-app" style="display:none">
 <nav class="sidebar">
   <div class="sidebar-logo">🧠 Mi Consultorio</div>
-  <div style="margin-top:auto;padding:8px;border-top:1px solid #e8e6e0;position:absolute;bottom:0;left:0;right:0;background:#fff"><button class="sb" onclick="cerrarSesion()" style="color:#a32d2d;width:calc(100% - 0px);margin:0"><span>🚪</span> Cerrar sesión</button></div>
+  <div style="margin-top:auto;padding:8px;border-top:1px solid #e8e6e0;position:absolute;bottom:0;left:0;right:0;background:#fff"><button class="sb" onclick="activarNotificaciones()" style="margin-bottom:4px"><span>🔔</span> Notificaciones</button><button class="sb" onclick="cerrarSesion()" style="color:#a32d2d;width:calc(100% - 0px);margin:0"><span>🚪</span> Cerrar sesión</button></div>
   <button class="sb active" onclick="showSec('pacientes',this)"><span>👤</span> Pacientes</button>
   <button class="sb" onclick="showSec('asistencia',this)"><span>✓</span> Asistencia</button>
   <button class="sb" onclick="showSec('registro',this)"><span>📓</span> Registro diario</button>
@@ -1230,6 +1254,47 @@ function renderAgendaSemana(){
   }
   el.innerHTML=html||'<div class="empty">No hay turnos ni tareas próximas.</div>';
 }
+
+// ─── NOTIFICACIONES ──────────────────────────────────────
+async function activarNotificaciones(){
+  try {
+    OneSignalDeferred.push(async function(OneSignal){
+      const permission=await OneSignal.Notifications.permission;
+      if(!permission){
+        await OneSignal.Slidedown.promptPush();
+      } else {
+        toast('Las notificaciones ya están activadas ✓');
+      }
+    });
+  } catch(e){ toast('No se pudo activar las notificaciones'); }
+}
+
+async function enviarRecordatorio(titulo, mensaje){
+  // This sends via OneSignal REST API - for future server-side implementation
+  console.log('Recordatorio:', titulo, mensaje);
+}
+
+function verificarTareasVencidas(){
+  const hoy=new Date();
+  const vencidas=tasks.filter(t=>{
+    if(t.estado!=='pendiente'||!t.fecha_vencimiento)return false;
+    const fv=new Date(t.fecha_vencimiento+'T12:00');
+    const diff=Math.floor((fv-hoy)/86400000);
+    return diff<=1&&diff>=-1;
+  });
+  return vencidas;
+}
+
+function verificarCobrosProximos(){
+  const hoy=new Date();
+  return pacientes.filter(p=>{
+    if(!p.prox_cobro)return false;
+    const fc=new Date(p.prox_cobro+'T12:00');
+    const diff=Math.floor((fc-hoy)/86400000);
+    return diff>=0&&diff<=7;
+  });
+}
+
 function renderPagosGlobal(){
   const el=document.getElementById('pagos-c');
   const venc=pacientes.filter(p=>estadoPago(p)==='Pago vencido'),porV=pacientes.filter(p=>estadoPago(p)==='Por vencer'),alD=pacientes.filter(p=>estadoPago(p)==='Al día'),sinP=pacientes.filter(p=>estadoPago(p)==='Sin pagos');
@@ -1271,7 +1336,31 @@ async function cerrarSesion(){
 function mostrarApp(){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('main-app').style.display='flex';
-  Promise.all([loadPacientes(),loadRegistros(),loadTareas()]);
+  Promise.all([loadPacientes(),loadRegistros(),loadTareas()]).then(()=>{
+    // Check for upcoming tasks and payments after data loads
+    setTimeout(mostrarAlertas, 2000);
+  });
+}
+
+function mostrarAlertas(){
+  const tareasVenc=verificarTareasVencidas();
+  const cobrosProx=verificarCobrosProximos();
+  let alertas=[];
+  if(tareasVenc.length)alertas.push(`⚠️ ${tareasVenc.length} tarea${tareasVenc.length>1?'s':''} vencida${tareasVenc.length>1?'s':''} o por vencer`);
+  if(cobrosProx.length)alertas.push(`💰 ${cobrosProx.length} cobro${cobrosProx.length>1?'s':''} próximo${cobrosProx.length>1?'s':''} (esta semana)`);
+  if(alertas.length){
+    const div=document.createElement('div');
+    div.style.cssText='position:fixed;top:16px;right:16px;z-index:500;display:flex;flex-direction:column;gap:8px;max-width:300px';
+    div.id='alertas-banner';
+    alertas.forEach(a=>{
+      const el=document.createElement('div');
+      el.style.cssText='background:#1a1a1a;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 4px 16px rgba(0,0,0,0.2)';
+      el.innerHTML=`<span>${a}</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;padding:0">×</button>`;
+      div.appendChild(el);
+    });
+    document.body.appendChild(div);
+    setTimeout(()=>{const b=document.getElementById('alertas-banner');if(b)b.remove();},8000);
+  }
 }
 
 async function checkSession(){
