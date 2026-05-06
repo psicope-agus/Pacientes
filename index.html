@@ -1514,16 +1514,7 @@ async function eliminarArchivo(id,path){
 }
 
 
-let agendaView='semana';
-function setAgendaView(v,btn){
-  agendaView=v;
-  document.querySelectorAll('#sec-tareas .seg-ctrl .seg-btn').forEach(b=>b.classList.remove('active'));
-  if(btn)btn.classList.add('active');
-  document.getElementById('agenda-semana-v').style.display=v==='semana'?'block':'none';
-  document.getElementById('agenda-tareas-v').style.display=v==='tareas'?'block':'none';
-  if(v==='semana')renderAgendaSemana();
-  if(v==='tareas')renderTasks();
-}
+
 
 function renderAgendaSemana(){
   const el=document.getElementById('agenda-semana-c');
