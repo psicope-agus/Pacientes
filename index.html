@@ -1214,6 +1214,7 @@ async function marcarAsi(pid,fecha,estado){
   renderAsi();
   renderPacientes();
   if(document.getElementById('det-asis-c'))renderAsisPaciente(pacientes.find(x=>x.id===pid));
+  if(document.getElementById('sec-dashboard').classList.contains('vis'))renderDashboard();
 }
 
 function renderAsiGlobal(){
