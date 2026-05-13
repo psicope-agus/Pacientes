@@ -445,7 +445,7 @@ body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); 
     <p class="page-subtitle" id="dash-date"></p>
   </div>
   <div class="dash-grid" id="dash-stats"></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" id="dash-cols">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))" id="dash-cols">
     <div>
       <p style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Turnos de hoy</p>
       <div id="dash-turnos-hoy"></div>
@@ -460,16 +460,14 @@ body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); 
     <div id="dash-cobros"></div>
   </div>
   <div style="margin-top:20px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <p style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em">Nota rápida sobre paciente</p>
-    </div>
+    <p style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">📝 Nota rápida sobre paciente</p>
     <div class="card" style="padding:16px">
-      <div class="fgrid" style="margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:10px">
         <div class="fg" style="margin-bottom:0"><label>Paciente</label><select id="dash-nota-pac"><option value="">— seleccioná un paciente —</option></select></div>
         <div class="fg" style="margin-bottom:0"><label>Etiqueta</label><select id="dash-nota-etiq"><option value="">Sin etiqueta</option><option>Evolución</option><option>Observación</option><option>Coordinación</option><option>Familia</option><option>Recordatorio</option><option>Otro</option></select></div>
       </div>
       <div class="fg" style="margin-bottom:10px"><textarea id="dash-nota-txt" placeholder="Escribí tu nota acá..." style="min-height:80px"></textarea></div>
-      <button class="btn-p btn-sm" onclick="guardarNotaRapida()" style="width:100%">Guardar nota</button>
+      <button class="btn-p" onclick="guardarNotaRapida()" style="width:100%">Guardar nota</button>
     </div>
     <div id="dash-notas-recientes" style="margin-top:12px"></div>
   </div>
@@ -1140,26 +1138,82 @@ function renderAsi(){
   const diaSem=DIAS[new Date(fecha+'T12:00').getDay()-1];
   const conTurno=pacientes.filter(p=>diaSem&&(p.turnos||[]).some(t=>t.dia===diaSem));
   if(!diaSem||!conTurno.length){el.innerHTML=`<div class="empty">No hay turnos para este día (${diaSem||'fin de semana'}).</div>`;return;}
-  el.innerHTML=`<p style="font-size:13px;color:#888;margin-bottom:14px">${diaSem} · ${conTurno.length} paciente${conTurno.length>1?'s':''} con turno</p>`+
+  el.innerHTML=`<p style="font-size:13px;color:var(--text-2);margin-bottom:14px;font-weight:500">${diaSem} · ${conTurno.length} paciente${conTurno.length>1?'s':''} con turno</p>`+
   conTurno.map(p=>{
-    const horario=(p.turnos||[]).filter(t=>t.dia===diaSem).map(t=>`${t.inicio||''}${t.fin?' - '+t.fin:''}`).join(' / ');
+    const horario=(p.turnos||[]).filter(t=>t.dia===diaSem).map(t=>`${t.inicio||''}${t.fin?' → '+t.fin:''}`).join(' / ');
     const ses=sesionesCache[p.id]||[],s=ses.find(x=>x.fecha===fecha),est=s?s.asistencia:null;
-    return`<div class="card" style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-      <div class="avatar">${inic(p.nombre)}</div>
-      <div style="flex:1"><p style="font-weight:500;font-size:13px">${p.nombre}</p><p style="font-size:12px;color:#888">${horario}</p></div>
-      <div style="display:flex;gap:6px">
-        <button class="btn-sm ${est==='Presente'?'btn-p':'btn-s'}" onclick="marcarAsi(${p.id},'${fecha}','Presente')">Presente</button>
-        <button class="btn-sm ${est==='Ausente'?'btn-p':'btn-s'}" onclick="marcarAsi(${p.id},'${fecha}','Ausente')">Ausente</button>
-        <button class="btn-sm ${est==='Justificado'?'btn-p':'btn-s'}" onclick="marcarAsi(${p.id},'${fecha}','Justificado')">Justificado</button>
+    const notaExistente=s?s.notas||'':'';
+    const notaId=`nota-${p.id}`;
+    const notaWrapId=`nota-wrap-${p.id}`;
+    return`<div class="card" style="margin-bottom:10px;padding:14px 16px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="avatar">${inic(p.nombre)}</div>
+        <div style="flex:1">
+          <p style="font-weight:600;font-size:13px">${p.nombre}</p>
+          <p style="font-size:12px;color:var(--text-3)">${horario}</p>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+          <button class="btn-sm ${est==='Presente'?'btn-p':'btn-s'}" onclick="marcarAsi(${p.id},'${fecha}','Presente')">✓ Presente</button>
+          <button class="btn-sm ${est==='Ausente'?'btn-p':'btn-s'}" onclick="marcarAsi(${p.id},'${fecha}','Ausente')">✗ Ausente</button>
+          <button class="btn-sm ${est==='Justificado'?'btn-p':'btn-s'}" onclick="marcarAsi(${p.id},'${fecha}','Justificado')">J Justificado</button>
+          <button class="btn-edit btn-sm" onclick="toggleNotaAsi('${notaWrapId}')" title="Agregar observación" style="font-size:13px">📝</button>
+        </div>
+      </div>
+      ${notaExistente?`<p style="font-size:12px;color:var(--text-2);margin-top:10px;padding:8px 10px;background:var(--surface-2);border-radius:var(--radius-sm);border-left:3px solid var(--primary)">${notaExistente}</p>`:''}
+      <div id="${notaWrapId}" style="display:none;margin-top:10px">
+        <textarea id="${notaId}" placeholder="Observaciones de la sesión..." style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;font-family:inherit;resize:vertical;min-height:60px">${notaExistente}</textarea>
+        <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px">
+          <button class="btn-s btn-sm" onclick="toggleNotaAsi('${notaWrapId}')">Cancelar</button>
+          <button class="btn-p btn-sm" onclick="guardarNotaAsi(${p.id},'${fecha}','${notaId}','${notaWrapId}')">Guardar nota</button>
+        </div>
       </div>
     </div>`;}).join('');
 }
 
+function toggleNotaAsi(wrapId){
+  const el=document.getElementById(wrapId);
+  if(el)el.style.display=el.style.display==='none'?'block':'none';
+}
+
+async function guardarNotaAsi(pid,fecha,inputId,wrapId){
+  const nota=document.getElementById(inputId).value.trim();
+  const ses=sesionesCache[pid]||[];
+  const existe=ses.find(s=>s.fecha===fecha);
+  if(existe){
+    const {error}=await db.from('sesiones').update({notas:nota}).eq('id',existe.id);
+    if(error){toast('Error: '+error.message);return;}
+    existe.notas=nota;
+  } else {
+    // Si no hay sesión todavía, crear una sin asistencia definida
+    const {data,error}=await db.from('sesiones').insert({paciente_id:pid,fecha,asistencia:'Presente',notas:nota,actividades:null}).select().single();
+    if(error){toast('Error: '+error.message);return;}
+    if(data){if(!sesionesCache[pid])sesionesCache[pid]=[];sesionesCache[pid].push(data);sesionesCache[pid].sort((a,b)=>a.fecha.localeCompare(b.fecha));}
+  }
+  toast('Nota guardada ✓');
+  document.getElementById(wrapId).style.display='none';
+  renderAsi();
+}
+
 async function marcarAsi(pid,fecha,estado){
-  const ses=sesionesCache[pid]||[],existe=ses.find(s=>s.fecha===fecha);
-  if(existe){await db.from('sesiones').update({asistencia:estado}).eq('id',existe.id);existe.asistencia=estado;}
-  else{const {data}=await db.from('sesiones').insert({paciente_id:pid,fecha,asistencia:estado,actividades:null,notas:null}).select().single();if(data){if(!sesionesCache[pid])sesionesCache[pid]=[];sesionesCache[pid].push(data);}}
-  renderAsi();renderPacientes();
+  const ses=sesionesCache[pid]||[];
+  const existe=ses.find(s=>s.fecha===fecha);
+  if(existe){
+    const {error}=await db.from('sesiones').update({asistencia:estado}).eq('id',existe.id);
+    if(error){toast('Error al guardar: '+error.message);return;}
+    existe.asistencia=estado;
+  } else {
+    const {data,error}=await db.from('sesiones').insert({paciente_id:pid,fecha,asistencia:estado,actividades:null,notas:null}).select().single();
+    if(error){toast('Error al guardar: '+error.message);return;}
+    if(data){
+      if(!sesionesCache[pid])sesionesCache[pid]=[];
+      sesionesCache[pid].push(data);
+      sesionesCache[pid].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+    }
+  }
+  toast('Asistencia guardada ✓');
+  renderAsi();
+  renderPacientes();
+  if(document.getElementById('det-asis-c'))renderAsisPaciente(pacientes.find(x=>x.id===pid));
 }
 
 function renderAsiGlobal(){
@@ -1184,13 +1238,52 @@ function renderAsisPaciente(p){
   const el=document.getElementById('det-asis-c');
   const ses=sesionesCache[p.id]||[];
   const pr=ses.filter(s=>s.asistencia==='Presente').length,au=ses.filter(s=>s.asistencia==='Ausente').length,ju=ses.filter(s=>s.asistencia==='Justificado').length,tt=ses.length;
-  if(!tt){el.innerHTML='<div class="empty">Sin sesiones registradas.</div>';return;}
+  if(!tt){el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-3)">Sin sesiones registradas.<br><small>Usá la sección Asistencia para registrar.</small></div>';return;}
   const pct=Math.round(pr/tt*100),barP=Math.round(pr/tt*100),barA=Math.round(au/tt*100),barJ=100-barP-barA;
-  el.innerHTML=`<div class="stat-row"><div class="stat"><div class="stat-l">Presentes</div><div class="stat-v" style="color:#3b6d11">${pr}</div></div><div class="stat"><div class="stat-l">Ausentes</div><div class="stat-v" style="color:#a32d2d">${au}</div></div><div class="stat"><div class="stat-l">Justificados</div><div class="stat-v" style="color:#854f0b">${ju}</div></div></div>
-  <div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:5px"><span>Asistencia efectiva</span><span style="font-weight:600">${pct}%</span></div>
-  <div class="asis-bar"><div class="asis-p" style="width:${barP}%"></div><div class="asis-j" style="width:${barJ}%"></div><div class="asis-a" style="width:${barA}%"></div></div></div>
-  <p style="font-size:12px;color:#888;margin-bottom:10px">Total: <strong>${tt}</strong> sesiones</p>
-  ${[...ses].reverse().map(s=>{const bc=s.asistencia==='Presente'?'b-ok':s.asistencia==='Justificado'?'b-warn':'b-bad';return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #e8e6e0"><span style="font-size:12px;color:#888;min-width:85px">${fmtShort(s.fecha)}</span><span class="badge ${bc}">${s.asistencia}</span></div>`;}).join('')}`;
+  el.innerHTML=`
+  <div class="stat-row">
+    <div class="stat"><div class="stat-l">Presentes</div><div class="stat-v" style="color:var(--green)">${pr}</div></div>
+    <div class="stat"><div class="stat-l">Ausentes</div><div class="stat-v" style="color:var(--red)">${au}</div></div>
+    <div class="stat"><div class="stat-l">Justificados</div><div class="stat-v" style="color:var(--yellow)">${ju}</div></div>
+  </div>
+  <div style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-2);margin-bottom:6px">
+      <span>Asistencia efectiva</span><span style="font-weight:700;color:var(--text)">${pct}%</span>
+    </div>
+    <div class="asis-bar"><div class="asis-p" style="width:${barP}%"></div><div class="asis-j" style="width:${barJ}%"></div><div class="asis-a" style="width:${barA}%"></div></div>
+    <div style="display:flex;gap:14px;font-size:11px;color:var(--text-3);margin-top:5px">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block"></span>Presente</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:var(--yellow);display:inline-block"></span>Justificado</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block"></span>Ausente</span>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <p style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em">Historial completo (${tt} sesiones)</p>
+  </div>
+  ${[...ses].reverse().map(s=>{
+    const bc=s.asistencia==='Presente'?'b-ok':s.asistencia==='Justificado'?'b-warn':'b-bad';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-md);margin-bottom:4px;background:var(--surface-2);border:1px solid var(--border-light)">
+      <span style="font-size:12px;color:var(--text-2);min-width:90px;font-weight:500">${fmtDate(s.fecha)}</span>
+      <span class="badge ${bc}" style="flex:none">${s.asistencia}</span>
+      <div style="display:flex;gap:4px;margin-left:auto">
+        <button class="btn-sm btn-s" style="font-size:11px;padding:3px 7px" onclick="cambiarAsistencia(${s.id},${p.id},'Presente')" title="Presente">✓</button>
+        <button class="btn-sm btn-s" style="font-size:11px;padding:3px 7px" onclick="cambiarAsistencia(${s.id},${p.id},'Ausente')" title="Ausente">✗</button>
+        <button class="btn-sm btn-s" style="font-size:11px;padding:3px 7px" onclick="cambiarAsistencia(${s.id},${p.id},'Justificado')" title="Justificado">J</button>
+      </div>
+    </div>`;
+  }).join('')}`;
+}
+
+async function cambiarAsistencia(sesId, pid, nuevoEstado){
+  const {error}=await db.from('sesiones').update({asistencia:nuevoEstado}).eq('id',sesId);
+  if(error){toast('Error: '+error.message);return;}
+  const ses=sesionesCache[pid]||[];
+  const s=ses.find(x=>x.id===sesId);
+  if(s)s.asistencia=nuevoEstado;
+  toast('Asistencia actualizada ✓');
+  const p=pacientes.find(x=>x.id===pid);
+  if(p)renderAsisPaciente(p);
+  renderPacientes();
 }
 
 
