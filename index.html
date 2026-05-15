@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Mi Consultorio | Psicopedagogía</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -522,10 +522,10 @@ body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); 
       <button class="seg-btn" onclick="setAgendaView('lista',this)">Lista</button>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap" id="agenda-filtros">
-      <button class="cat-chip active" onclick="filtrarAgenda('todos',this)">Todos</button>
+      <button class="cat-chip" onclick="filtrarAgenda('todos',this)">Todos</button>
       <button class="cat-chip" onclick="filtrarAgenda('evento',this)">Eventos</button>
       <button class="cat-chip" onclick="filtrarAgenda('tarea',this)">Tareas</button>
-      <button class="cat-chip" onclick="filtrarAgenda('pendiente',this)">Pendientes</button>
+      <button class="cat-chip active" onclick="filtrarAgenda('pendiente',this)">Pendientes</button>
       <button class="cat-chip" onclick="filtrarAgenda('hecha',this)">Completadas</button>
     </div>
   </div>
@@ -1091,8 +1091,17 @@ async function guardarTask(){
 }
 
 async function toggleTask(id){
-  const t=tasks.find(x=>x.id===id);const ne=t.estado==='pendiente'?'hecha':'pendiente';
-  await db.from('tareas').update({estado:ne}).eq('id',id);t.estado=ne;renderTasks();updateTaskBadge();
+  const t=tasks.find(x=>x.id===id);
+  const ne=t.estado==='pendiente'?'hecha':'pendiente';
+  const {error}=await db.from('tareas').update({estado:ne}).eq('id',id);
+  if(error){toast('Error al guardar: '+error.message);return;}
+  t.estado=ne;
+  updateTaskBadge();
+  // Refresh whichever view is active
+  if(agendaView==='semana')renderAgendaSemana();
+  else if(agendaView==='mes')renderMes();
+  else renderLista();
+  if(document.getElementById('sec-dashboard').classList.contains('vis'))renderDashboard();
 }
 
 async function eliminarTask(id){
@@ -1177,21 +1186,39 @@ function toggleNotaAsi(wrapId){
 
 async function guardarNotaAsi(pid,fecha,inputId,wrapId){
   const nota=document.getElementById(inputId).value.trim();
+  if(!nota)return;
   const ses=sesionesCache[pid]||[];
   const existe=ses.find(s=>s.fecha===fecha);
+  
+  // 1. Guardar en sesiones
   if(existe){
     const {error}=await db.from('sesiones').update({notas:nota}).eq('id',existe.id);
     if(error){toast('Error: '+error.message);return;}
     existe.notas=nota;
   } else {
-    // Si no hay sesión todavía, crear una sin asistencia definida
     const {data,error}=await db.from('sesiones').insert({paciente_id:pid,fecha,asistencia:'Presente',notas:nota,actividades:null}).select().single();
     if(error){toast('Error: '+error.message);return;}
     if(data){if(!sesionesCache[pid])sesionesCache[pid]=[];sesionesCache[pid].push(data);sesionesCache[pid].sort((a,b)=>a.fecha.localeCompare(b.fecha));}
   }
-  toast('Nota guardada ✓');
+
+  // 2. También guardar en registro diario
+  const {data:regData,error:regError}=await db.from('registros').insert({
+    fecha,
+    tipo:'paciente',
+    paciente_id:pid,
+    etiqueta:'Observación',
+    texto:nota
+  }).select().single();
+  if(!regError&&regData){
+    registros.unshift(regData);
+  }
+
+  toast('Nota guardada en sesión y registro diario ✓');
   document.getElementById(wrapId).style.display='none';
   renderAsi();
+  if(document.getElementById('sec-dashboard').classList.contains('vis')){
+    renderNotasRecientes();
+  }
 }
 
 async function marcarAsi(pid,fecha,estado){
@@ -1438,7 +1465,7 @@ function renderNotasRecientes(){
   }).join('');
 }
 // ─── AGENDA COMPLETA ─────────────────────────────────────
-let agendaFiltro='todos';
+let agendaFiltro='pendiente';
 let agendaView='semana';
 let calMes=new Date().getMonth();
 let calAnio=new Date().getFullYear();
