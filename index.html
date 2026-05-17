@@ -403,6 +403,24 @@ body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); 
   .cal-day { min-height: 52px; }
   .foto-grid { grid-template-columns: repeat(2,1fr); }
 }
+
+.eval-stars{display:flex;gap:6px;margin-top:4px;margin-bottom:2px}
+.eval-star{width:32px;height:32px;border-radius:var(--radius-sm);border:2px solid var(--border);background:var(--surface-2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--text-3);transition:all .15s}
+.eval-star:hover{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
+.eval-star.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.eval-bar-wrap{margin-bottom:10px}
+.eval-bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.eval-bar-label span:first-child{font-weight:500;color:var(--text)}
+.eval-bar-label span:last-child{font-weight:700;color:var(--primary)}
+.eval-bar-bg{height:10px;background:var(--surface-3);border-radius:5px;overflow:hidden}
+.eval-bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--primary-mid),var(--primary));transition:width .4s ease}
+.eval-card{padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius-md);margin-bottom:10px;background:var(--surface)}
+.eval-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.eval-tipo-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.eval-tipo-inicial{background:var(--primary-light);color:var(--primary-dark)}
+.eval-tipo-seguimiento{background:var(--green-light);color:#065F46}
+.eval-tipo-cierre{background:var(--yellow-light);color:#92400E}
+.radar-wrap{display:flex;justify-content:center;margin:14px 0}
 </style>
 
 </head>
@@ -586,6 +604,7 @@ body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); 
       <button class="dtab" onclick="showDTab('dt-asis',this)">Asistencia</button>
       <button class="dtab" onclick="showDTab('dt-montos',this);loadHistorialMontos()">Montos</button>
       <button class="dtab" onclick="showDTab('dt-archivos',this);loadArchivos()">Archivos</button>
+      <button class="dtab" onclick="showDTab('dt-eval',this);loadEvaluaciones()">Evaluaciones</button>
     </div>
     <div id="dt-info" class="dtsec vis"></div>
     <div id="dt-ses" class="dtsec">
@@ -603,6 +622,7 @@ body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); 
     <div id="dt-asis" class="dtsec"><div id="det-asis-c"></div></div>
     <div id="dt-montos" class="dtsec"><div id="det-montos-c"><div class="loading">Cargando...</div></div></div>
     <div id="dt-archivos" class="dtsec"><div id="det-archivos-c"><div class="loading">Cargando...</div></div></div>
+    <div id="dt-eval" class="dtsec"><div id="det-eval-c"><div class="loading">Cargando...</div></div></div>
     <div class="mactions"><button class="btn-s" onclick="closeMo('mo-det')">Cerrar</button></div>
   </div>
 </div>
@@ -651,6 +671,39 @@ body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); 
     <div class="fg"><label>Etiqueta</label><select id="reg-etiq"><option value="">Sin etiqueta</option><option>Evolución</option><option>Observación</option><option>Coordinación</option><option>Familia</option><option>Recordatorio</option><option>Otro</option></select></div>
     <div class="fg"><label>Registro</label><textarea id="reg-txt" style="min-height:110px" placeholder="Escribí tu nota aquí..."></textarea></div>
     <div class="mactions"><button class="btn-s" onclick="closeMo('mo-reg')">Cancelar</button><button class="btn-p" onclick="guardarReg()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- MODAL EVALUACION -->
+<div class="mo" id="mo-eval">
+  <div class="modal" style="width:560px">
+    <p class="mtitle" id="mo-eval-titulo">Nueva evaluación</p>
+    <input type="hidden" id="ev-id">
+    <div class="fgrid">
+      <div class="fg"><label>Fecha</label><input type="date" id="ev-fecha"></div>
+      <div class="fg"><label>Tipo</label>
+        <select id="ev-tipo">
+          <option value="inicial">Evaluación inicial</option>
+          <option value="seguimiento">Seguimiento periódico</option>
+          <option value="cierre">Evaluación de cierre</option>
+        </select>
+      </div>
+    </div>
+    <p style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin:4px 0 12px">Puntaje por función (1 = Muy bajo · 5 = Muy alto)</p>
+    <div class="fgrid">
+      <div class="fg"><label>🧠 Memoria de trabajo</label><div class="eval-stars" data-field="ev-memoria"></div><input type="hidden" id="ev-memoria" value="0"></div>
+      <div class="fg"><label>🛑 Inhibición</label><div class="eval-stars" data-field="ev-inhibicion"></div><input type="hidden" id="ev-inhibicion" value="0"></div>
+      <div class="fg"><label>🔄 Flexibilidad cognitiva</label><div class="eval-stars" data-field="ev-flexibilidad"></div><input type="hidden" id="ev-flexibilidad" value="0"></div>
+      <div class="fg"><label>📋 Planificación</label><div class="eval-stars" data-field="ev-planificacion"></div><input type="hidden" id="ev-planificacion" value="0"></div>
+      <div class="fg"><label>💬 Fluidez verbal</label><div class="eval-stars" data-field="ev-fluidez"></div><input type="hidden" id="ev-fluidez" value="0"></div>
+      <div class="fg"><label>❤️ Control emocional</label><div class="eval-stars" data-field="ev-control"></div><input type="hidden" id="ev-control" value="0"></div>
+      <div class="fg full"><label>👁️ Atención sostenida</label><div class="eval-stars" data-field="ev-atencion"></div><input type="hidden" id="ev-atencion" value="0"></div>
+    </div>
+    <div class="fg full"><label>Observaciones clínicas</label><textarea id="ev-obs" style="min-height:90px" placeholder="Describí el desempeño del paciente, contexto de la evaluación, herramientas utilizadas..."></textarea></div>
+    <div class="mactions">
+      <button class="btn-s" onclick="closeMo('mo-eval')">Cancelar</button>
+      <button class="btn-p" onclick="guardarEvaluacion()">Guardar evaluación</button>
+    </div>
   </div>
 </div>
 
@@ -1860,6 +1913,195 @@ function calcularCobro(){
 }
 
 
+
+// ─── EVALUACIONES ────────────────────────────────────────
+const FE_FIELDS = [
+  {id:'ev-memoria', label:'Memoria de trabajo', emoji:'🧠', db:'memoria_trabajo'},
+  {id:'ev-inhibicion', label:'Inhibición', emoji:'🛑', db:'inhibicion'},
+  {id:'ev-flexibilidad', label:'Flexibilidad cognitiva', emoji:'🔄', db:'flexibilidad'},
+  {id:'ev-planificacion', label:'Planificación', emoji:'📋', db:'planificacion'},
+  {id:'ev-fluidez', label:'Fluidez verbal', emoji:'💬', db:'fluidez_verbal'},
+  {id:'ev-control', label:'Control emocional', emoji:'❤️', db:'control_emocional'},
+  {id:'ev-atencion', label:'Atención sostenida', emoji:'👁️', db:'atencion_sostenida'},
+];
+
+function initEvalStars(){
+  document.querySelectorAll('.eval-stars').forEach(wrap=>{
+    const fieldId=wrap.dataset.field;
+    wrap.innerHTML='';
+    for(let i=1;i<=5;i++){
+      const btn=document.createElement('button');
+      btn.className='eval-star';
+      btn.textContent=i;
+      btn.type='button';
+      btn.onclick=()=>setEvalStar(fieldId,i,wrap);
+      wrap.appendChild(btn);
+    }
+  });
+}
+
+function setEvalStar(fieldId,val,wrap){
+  document.getElementById(fieldId).value=val;
+  wrap.querySelectorAll('.eval-star').forEach((s,i)=>{
+    s.classList.toggle('active',i<val);
+  });
+}
+
+function resetEvalForm(){
+  document.getElementById('ev-id').value='';
+  document.getElementById('ev-fecha').value=today();
+  document.getElementById('ev-tipo').value='inicial';
+  document.getElementById('ev-obs').value='';
+  FE_FIELDS.forEach(f=>{
+    document.getElementById(f.id).value=0;
+    const wrap=document.querySelector(`.eval-stars[data-field="${f.id}"]`);
+    if(wrap)wrap.querySelectorAll('.eval-star').forEach(s=>s.classList.remove('active'));
+  });
+}
+
+function abrirNuevaEval(){
+  resetEvalForm();
+  document.getElementById('mo-eval-titulo').textContent='Nueva evaluación';
+  initEvalStars();
+  openMo('mo-eval');
+}
+
+function abrirEditarEval(ev){
+  document.getElementById('ev-id').value=ev.id;
+  document.getElementById('ev-fecha').value=ev.fecha;
+  document.getElementById('ev-tipo').value=ev.tipo||'inicial';
+  document.getElementById('ev-obs').value=ev.observaciones||'';
+  document.getElementById('mo-eval-titulo').textContent='Editar evaluación';
+  initEvalStars();
+  FE_FIELDS.forEach(f=>{
+    const val=ev[f.db]||0;
+    document.getElementById(f.id).value=val;
+    const wrap=document.querySelector(`.eval-stars[data-field="${f.id}"]`);
+    if(wrap)setEvalStar(f.id,val,wrap);
+  });
+  openMo('mo-eval');
+}
+
+async function guardarEvaluacion(){
+  const editId=document.getElementById('ev-id').value;
+  const datos={
+    paciente_id:curPId,
+    fecha:document.getElementById('ev-fecha').value,
+    tipo:document.getElementById('ev-tipo').value,
+    observaciones:document.getElementById('ev-obs').value.trim()||null,
+  };
+  FE_FIELDS.forEach(f=>{datos[f.db]=parseFloat(document.getElementById(f.id).value)||null;});
+  
+  let error;
+  if(editId){
+    ({error}=await db.from('evaluaciones').update(datos).eq('id',editId));
+  } else {
+    ({error}=await db.from('evaluaciones').insert(datos));
+  }
+  if(error){alert('Error: '+error.message);return;}
+  closeMo('mo-eval');
+  toast(editId?'Evaluación actualizada ✓':'Evaluación guardada ✓');
+  loadEvaluaciones();
+}
+
+async function eliminarEvaluacion(id){
+  if(!confirm('¿Eliminar esta evaluación?'))return;
+  await db.from('evaluaciones').delete().eq('id',id);
+  toast('Evaluación eliminada');
+  loadEvaluaciones();
+}
+
+async function loadEvaluaciones(){
+  if(!curPId)return;
+  const el=document.getElementById('det-eval-c');
+  const {data,error}=await db.from('evaluaciones').select('*').eq('paciente_id',curPId).order('fecha',{ascending:false});
+  if(error){el.innerHTML='<div class="empty">Error al cargar.</div>';return;}
+  const evals=data||[];
+
+  if(!evals.length){
+    el.innerHTML=`<div style="text-align:center;padding:30px">
+      <p style="font-size:32px;margin-bottom:10px">📊</p>
+      <p style="font-size:14px;font-weight:500;color:var(--text)">Sin evaluaciones registradas</p>
+      <p style="font-size:13px;color:var(--text-3);margin:6px 0 16px">Registrá la primera evaluación del paciente</p>
+      <button class="btn-p" onclick="abrirNuevaEval()">+ Nueva evaluación</button>
+    </div>`;
+    return;
+  }
+
+  const tipoLabel={inicial:'Inicial',seguimiento:'Seguimiento',cierre:'Cierre'};
+  const tipoCls={inicial:'eval-tipo-inicial',seguimiento:'eval-tipo-seguimiento',cierre:'eval-tipo-cierre'};
+
+  // Radar SVG
+  function radarSVG(ev){
+    const vals=FE_FIELDS.map(f=>((ev[f.db]||0)/5));
+    const n=vals.length;
+    const cx=100,cy=100,r=80;
+    const pts=vals.map((v,i)=>{
+      const angle=(i/n)*2*Math.PI - Math.PI/2;
+      return[cx+r*v*Math.cos(angle), cy+r*v*Math.sin(angle)];
+    });
+    const polygon=pts.map(p=>p.join(',')).join(' ');
+    const gridLines=[0.2,0.4,0.6,0.8,1].map(g=>{
+      const gpts=FE_FIELDS.map((_,i)=>{
+        const angle=(i/n)*2*Math.PI - Math.PI/2;
+        return[cx+r*g*Math.cos(angle), cy+r*g*Math.sin(angle)];
+      });
+      return`<polygon points="${gpts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="var(--border)" stroke-width="1"/>`;
+    }).join('');
+    const axes=FE_FIELDS.map((_,i)=>{
+      const angle=(i/n)*2*Math.PI - Math.PI/2;
+      const x2=cx+r*Math.cos(angle),y2=cy+r*Math.sin(angle);
+      return`<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="var(--border)" stroke-width="1"/>`;
+    }).join('');
+    const labels=FE_FIELDS.map((f,i)=>{
+      const angle=(i/n)*2*Math.PI - Math.PI/2;
+      const x=cx+(r+18)*Math.cos(angle),y=cy+(r+18)*Math.sin(angle);
+      return`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="9" fill="var(--text-2)">${f.emoji}</text>`;
+    }).join('');
+    return`<svg viewBox="0 0 200 200" width="160" height="160">
+      ${gridLines}${axes}
+      <polygon points="${polygon}" fill="rgba(108,71,255,0.15)" stroke="var(--primary)" stroke-width="2"/>
+      ${labels}
+    </svg>`;
+  }
+
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <p style="font-size:13px;color:var(--text-2)">${evals.length} evaluación${evals.length>1?'es':''} registrada${evals.length>1?'s':''}</p>
+      <button class="btn-p btn-sm" onclick="abrirNuevaEval()">+ Nueva evaluación</button>
+    </div>
+    ${evals.map((ev,idx)=>{
+      const promedio=(FE_FIELDS.reduce((a,f)=>a+(ev[f.db]||0),0)/FE_FIELDS.length).toFixed(1);
+      const esUltima=idx===0;
+      return`<div class="eval-card">
+        <div class="eval-card-head">
+          <div>
+            <span class="eval-tipo-badge ${tipoCls[ev.tipo]||'eval-tipo-inicial'}">${tipoLabel[ev.tipo]||ev.tipo}</span>
+            <p style="font-size:13px;color:var(--text-2);margin-top:4px">${fmtDate(ev.fecha)} ${esUltima?'<span class="badge b-purple" style="font-size:10px">Más reciente</span>':''}</p>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <div style="text-align:center"><p style="font-size:22px;font-weight:800;color:var(--primary)">${promedio}</p><p style="font-size:10px;color:var(--text-3)">promedio</p></div>
+            <button class="btn-edit btn-sm" onclick='abrirEditarEval(${JSON.stringify(ev).replace(/'/g,"&#39;")})'>✏️</button>
+            <button class="task-del" onclick="eliminarEvaluacion(${ev.id})">×</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+          <div class="radar-wrap" style="margin:0">${radarSVG(ev)}</div>
+          <div style="flex:1;min-width:180px">
+            ${FE_FIELDS.map(f=>{
+              const val=ev[f.db]||0;
+              const pct=(val/5)*100;
+              return`<div class="eval-bar-wrap">
+                <div class="eval-bar-label"><span>${f.emoji} ${f.label}</span><span>${val}/5</span></div>
+                <div class="eval-bar-bg"><div class="eval-bar-fill" style="width:${pct}%"></div></div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+        ${ev.observaciones?`<div style="margin-top:12px;padding:10px 12px;background:var(--surface-2);border-radius:var(--radius-sm);border-left:3px solid var(--primary)"><p style="font-size:12px;color:var(--text-2);line-height:1.6">${ev.observaciones}</p></div>`:''}
+      </div>`;
+    }).join('')}`;
+}
 // ─── ARCHIVOS ────────────────────────────────────────────
 let archivoFiltro='todos';
 
