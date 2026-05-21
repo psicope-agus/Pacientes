@@ -686,53 +686,67 @@ body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); 
   </div>
 </div>
 
-<!-- MODAL EVALUACION -->
+<!-- MODAL EVALUACION WIZARD -->
 <div class="mo" id="mo-eval">
-  <div class="modal" style="width:620px">
-    <p class="mtitle" id="mo-eval-titulo">Nueva evaluación</p>
-    <input type="hidden" id="ev-id">
-    <div class="fgrid">
-      <div class="fg"><label>Fecha</label><input type="date" id="ev-fecha"></div>
-      <div class="fg"><label>Tipo</label>
-        <select id="ev-tipo">
-          <option value="inicial">Evaluación inicial</option>
-          <option value="seguimiento">Seguimiento periódico</option>
-          <option value="cierre">Evaluación de cierre</option>
-        </select>
+  <div class="modal" style="width:600px;max-height:92vh">
+    <!-- PASO 0: Configurar evaluación -->
+    <div id="eval-step-0">
+      <p class="mtitle">Nueva evaluación</p>
+      <input type="hidden" id="ev-id">
+      <div class="fgrid">
+        <div class="fg"><label>Paciente</label><select id="ev-pac-id"><option value="">— seleccioná un paciente —</option></select></div>
+        <div class="fg"><label>Fecha</label><input type="date" id="ev-fecha"></div>
+        <div class="fg"><label>Tipo</label>
+          <select id="ev-tipo">
+            <option value="inicial">Evaluación inicial</option>
+            <option value="seguimiento">Seguimiento periódico</option>
+            <option value="cierre">Evaluación de cierre</option>
+          </select>
+        </div>
+        <div class="fg"><label>Instrumento principal</label>
+          <select id="ev-instrumento">
+            <option value="">— seleccioná —</option>
+            <option>BRIEF</option><option>WCST</option><option>Torre de Londres</option>
+            <option>Torre de Hanoi</option><option>Test de Stroop</option>
+            <option>Trail Making Test</option><option>Fluidez verbal</option>
+            <option>NEPSY</option><option>D-KEFS</option>
+            <option>Observación clínica</option><option>Otro</option>
+          </select>
+        </div>
       </div>
-      <div class="fg full"><label>Instrumento / Prueba utilizada</label>
-        <select id="ev-instrumento">
-          <option value="">— seleccioná el instrumento —</option>
-          <option value="BRIEF">BRIEF (Behavior Rating Inventory of Executive Function)</option>
-          <option value="WCST">WCST - Test de Clasificación de Tarjetas de Wisconsin</option>
-          <option value="Torre de Londres">Torre de Londres</option>
-          <option value="Torre de Hanoi">Torre de Hanoi</option>
-          <option value="Stroop">Test de Stroop</option>
-          <option value="Trail Making Test">Trail Making Test (TMT)</option>
-          <option value="Fluidez verbal">Test de Fluidez Verbal</option>
-          <option value="NEPSY">NEPSY</option>
-          <option value="D-KEFS">D-KEFS</option>
-          <option value="Observación clínica">Observación clínica</option>
-          <option value="Otro">Otro</option>
-        </select>
+      <p style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">¿Qué funciones vas a evaluar?</p>
+      <div id="eval-func-selector" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="btn-s" style="flex:1" onclick="selAllFuncs(true)">Seleccionar todas</button>
+        <button class="btn-s" style="flex:1" onclick="selAllFuncs(false)">Ninguna</button>
+      </div>
+      <div class="mactions">
+        <button class="btn-s" onclick="closeMo('mo-eval')">Cancelar</button>
+        <button class="btn-p" onclick="iniciarWizard()">Comenzar evaluación →</button>
       </div>
     </div>
-    
-    <p style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin:8px 0 4px">
-      Seleccioná las funciones a evaluar
-    </p>
-    <p style="font-size:12px;color:var(--text-2);margin-bottom:14px">
-      Podés evaluar todas o solo las que correspondan al paciente y la sesión.
-    </p>
-
-    <div id="ev-funciones-container"></div>
-    
-    <div class="fg" style="margin-top:8px"><label>Observaciones clínicas generales</label>
-      <textarea id="ev-obs" style="min-height:90px" placeholder="Contexto de la evaluación, comportamiento durante la prueba, aspectos relevantes observados, hipótesis diagnósticas..."></textarea>
+    <!-- PASO N: Evaluar función -->
+    <div id="eval-step-n" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <p style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em" id="eval-progreso">Paso 1 de 3</p>
+        <div style="display:flex;gap:4px" id="eval-dots"></div>
+      </div>
+      <div id="eval-barra-prog" style="height:4px;background:var(--surface-3);border-radius:2px;margin-bottom:18px"><div id="eval-barra-fill" style="height:100%;background:var(--primary);border-radius:2px;transition:width .3s"></div></div>
+      <div id="eval-func-content"></div>
+      <div class="mactions" id="eval-wizard-actions"></div>
     </div>
-    <div class="mactions">
-      <button class="btn-s" onclick="closeMo('mo-eval')">Cancelar</button>
-      <button class="btn-p" onclick="guardarEvaluacion()">Guardar evaluación</button>
+    <!-- PASO FINAL: Resumen -->
+    <div id="eval-step-final" style="display:none">
+      <p class="mtitle">Resumen de la evaluación</p>
+      <div id="eval-resumen-content"></div>
+      <div class="fg"><label>Observaciones clínicas generales</label>
+        <textarea id="ev-obs" style="min-height:90px" placeholder="Contexto, comportamiento durante la evaluación, hipótesis diagnósticas..."></textarea>
+      </div>
+      <div class="mactions">
+        <button class="btn-s" onclick="closeMo('mo-eval')">Cancelar</button>
+        <button class="btn-s" onclick="volverWizard()">← Revisar</button>
+        <button class="btn-p" onclick="guardarEvaluacion()">Guardar evaluación</button>
+      </div>
     </div>
   </div>
 </div>
@@ -856,7 +870,7 @@ function showSec(name,btn,isMobile=false){
   if(other)other.classList.add('active');
   if(name==='tareas'){setAgendaView(agendaView||'semana',document.querySelector('#agenda-vistas .seg-btn'));}
   if(name==='dashboard')renderDashboard();
-  if(name==='evaluaciones')renderEvalGlobal();
+  if(name==='evaluaciones'){renderEvalGlobal();}
   if(name==='asistencia'){document.getElementById('fecha-asi').value=today();renderAsi();}
   if(name==='pagos')renderPagosGlobal();
   if(name==='tareas')renderTasks();
@@ -1945,127 +1959,87 @@ function calcularCobro(){
 
 
 
-// ─── EVALUACIONES ────────────────────────────────────────
+// ─── EVALUACIONES WIZARD ─────────────────────────────────
 const FE_PROTOCOL = [
   {id:'memoria_trabajo',db:'memoria_trabajo',emoji:'🧠',label:'Memoria de trabajo',
-   desc:'Mantener y manipular información de forma temporal.',
-   inst:'Dígitos WMS, Letras y números WMS, n-back',
-   niveles:['No evaluada','Muy bajo: No retiene secuencias simples','Bajo: Retiene pero dificultad para manipular','Medio: Retención adecuada con errores en manipulación','Alto: Buen rendimiento en retención y manipulación','Muy alto: Rendimiento superior']},
+   desc:'Capacidad de mantener y manipular información de forma temporal mientras se realiza otra tarea.',
+   inst:'Dígitos directos e inversos (WMS), Letras y números (WMS), Paradigma n-back',
+   como:'Administrá la subprueba de Dígitos del WMS. Pedile que repita series de números en orden directo (span) y luego en orden inverso. También podés pedir que ordene letras y números alternadamente.',
+   observar:['¿Puede repetir 4 o más dígitos en orden directo?','¿Logra invertir la secuencia sin errores?','¿Pierde información al manipularla (orden inverso, letras+números)?','¿Se frustra o abandona ante series largas?','¿Usa estrategias (repetición en voz baja, agrupamiento)?'],
+   niveles:['No evaluada','Muy bajo (1): Span de 2-3 dígitos, no logra orden inverso','Bajo (2): Span de 3-4, inversión con muchos errores','Medio (3): Span de 4-5, inversión posible con algunos errores','Alto (4): Span de 5-6, buena inversión con pocos errores','Muy alto (5): Span de 7+, manipulación eficiente y estratégica']},
   {id:'inhibicion',db:'inhibicion',emoji:'🛑',label:'Inhibición',
-   desc:'Suprimir respuestas automáticas e impulsos.',
-   inst:'Test de Stroop, Go/No-go, Simón dice',
-   niveles:['No evaluada','Muy bajo: Respuestas impulsivas frecuentes','Bajo: Dificultad para suprimir respuestas habituales','Medio: Logra inhibir con esfuerzo visible','Alto: Buena inhibición con pocos errores','Muy alto: Control inhibitorio eficiente']},
+   desc:'Capacidad para suprimir respuestas automáticas, impulsos e interferencias.',
+   inst:'Test de Stroop, Tareas Go/No-go (Luria), Simón dice',
+   como:'Aplicá el Test de Stroop: lámina 1 (leer colores en tinta negra), lámina 2 (nombrar colores de XXXX), lámina 3 (nombrar el color de la tinta ignorando la palabra). Para Go/No-go: "cuando golpeo una vez vos golpeás dos, cuando golpeo dos vos golpeás una".',
+   observar:['¿Lee automáticamente la palabra en lugar del color (lámina 3)?','¿Logra corregirse ante el error?','¿Aumentan los errores o el tiempo al avanzar?','¿Responde impulsivamente en el Go/No-go?','¿Verbaliza la regla para ayudarse?'],
+   niveles:['No evaluada','Muy bajo (1): No logra inhibir, lee palabras sistemáticamente','Bajo (2): Muchos errores en interferencia, impulsividad marcada','Medio (3): Comete errores pero se autocorrige','Alto (4): Pocos errores, tiempo levemente mayor en interferencia','Muy alto (5): Control inhibitorio eficiente, errores mínimos']},
   {id:'flexibilidad',db:'flexibilidad',emoji:'🔄',label:'Flexibilidad cognitiva',
-   desc:'Cambiar estrategias según el contexto.',
-   inst:'WCST, Trail Making Test B, D-KEFS',
-   niveles:['No evaluada','Muy bajo: Perseveración marcada, rigidez cognitiva','Bajo: Dificultad para cambiar criterios','Medio: Alternancia posible pero lenta','Alto: Cambio de estrategia adecuado','Muy alto: Alternancia cognitiva fluida']},
+   desc:'Capacidad para cambiar estrategias, criterios o perspectivas según las demandas.',
+   inst:'WCST (Test de Wisconsin), Trail Making Test parte B, D-KEFS',
+   como:'En el WCST, el niño debe descubrir el criterio de clasificación (color, forma, número) a través del feedback. Cambiá el criterio sin avisar cuando logre 10 respuestas correctas. Registrá errores perseverativos.',
+   observar:['¿Continúa con el criterio anterior aunque reciba feedback negativo (perseveración)?','¿Tarda en descubrir el nuevo criterio?','¿Se frustra al cambiar?','¿Logra completar las 6 categorías?','¿Verbaliza el cambio de estrategia?'],
+   niveles:['No evaluada','Muy bajo (1): Perseveración marcada, no cambia criterio','Bajo (2): Cambia con mucha dificultad y muchos errores','Medio (3): Cambia el criterio aunque con demora','Alto (4): Buen cambio de criterio con pocos errores perseverativos','Muy alto (5): Alternancia fluida y eficiente']},
   {id:'planificacion',db:'planificacion',emoji:'📋',label:'Planificación',
-   desc:'Organizar pasos hacia un objetivo.',
-   inst:'Torre de Londres, Torre de Hanoi, Mapa del zoo',
-   niveles:['No evaluada','Muy bajo: No anticipa pasos ni organiza','Bajo: Planificación incompleta, muchos intentos','Medio: Planifica con errores o ineficiencia','Alto: Buena capacidad de planificación','Muy alto: Planificación anticipada y eficiente']},
+   desc:'Capacidad para organizar pasos y anticipar secuencias hacia un objetivo.',
+   inst:'Torre de Londres, Torre de Hanoi, Mapa del zoo (BADS), Laberintos',
+   como:'Presentá la Torre de Londres: tres varillas y tres esferas de colores. El niño debe reproducir la configuración del modelo en el mínimo de movimientos. Empezá con 2 movimientos y aumentá. Dejá que planifique antes de mover.',
+   observar:['¿Mueve sin planificar primero (impulsividad)?','¿Puede anticipar 2-3 movimientos?','¿Abandona si no logra la solución rápida?','¿Mejora con intentos sucesivos?','¿Verbaliza los pasos antes de ejecutarlos?'],
+   niveles:['No evaluada','Muy bajo (1): No planifica, movimientos al azar','Bajo (2): Planificación incompleta, excede movimientos mínimos','Medio (3): Logra problemas simples, dificultad en complejos','Alto (4): Buena planificación, errores en problemas de alta dificultad','Muy alto (5): Planificación anticipada y eficiente en todos los niveles']},
   {id:'fluidez_verbal',db:'fluidez_verbal',emoji:'💬',label:'Fluidez verbal',
-   desc:'Generar palabras bajo criterio fonémico o semántico.',
-   inst:'FAS, Fluidez semántica, NEPSY',
-   niveles:['No evaluada','Muy bajo: Menos de 5 palabras/minuto','Bajo: Producción limitada con largas pausas','Medio: Producción adecuada con algunas dificultades','Alto: Buena fluidez y variedad léxica','Muy alto: Producción rica y fluida']},
+   desc:'Capacidad de generar palabras bajo criterios fonémicos o semánticos en tiempo limitado.',
+   inst:'Fluidez semántica (animales, alimentos), Fluidez fonémica (FAS), NEPSY',
+   como:'Pedile que diga todos los animales que pueda en 1 minuto. Luego palabras que empiecen con "M" en 1 minuto. Registrá cantidad total, errores (repeticiones, intrusiones) y pausas largas.',
+   observar:['¿Cuántas palabras genera por minuto?','¿Se queda bloqueado frecuentemente?','¿Repite palabras (errores de monitoreo)?','¿Usa categorías o agrupa (estrategia organizada)?','¿Mejora o empeora hacia el final del minuto?'],
+   niveles:['No evaluada','Muy bajo (1): Menos de 5 palabras, bloqueos frecuentes','Bajo (2): 5-8 palabras, pocas estrategias de búsqueda','Medio (3): 9-12 palabras, algunas estrategias de agrupamiento','Alto (4): 13-16 palabras, uso de categorías','Muy alto (5): 17+ palabras, búsqueda organizada y fluida']},
   {id:'control_emocional',db:'control_emocional',emoji:'❤️',label:'Control emocional',
-   desc:'Regulación emocional durante tareas de demanda cognitiva.',
-   inst:'BRIEF (escala emocional), observación clínica',
-   niveles:['No evaluada','Muy bajo: Desregulación emocional frecuente','Bajo: Dificultad para regular frustración','Medio: Control variable según la dificultad','Alto: Adecuada regulación emocional','Muy alto: Regulación consistente y adaptativa']},
+   desc:'Regulación de respuestas emocionales ante la demanda cognitiva y la frustración.',
+   inst:'BRIEF (escala de control emocional), observación clínica directa',
+   como:'Observá durante toda la sesión. Presentá tareas de dificultad creciente intencionalmente. Registrá reacciones ante el error, la frustración y el éxito. También podés consultar al BRIEF completado por padres/docentes.',
+   observar:['¿Reacciona con frustración intensa ante los errores?','¿Abandona la tarea al encontrar dificultad?','¿Llora, se enoja o se bloquea emocionalmente?','¿Puede retomar la tarea luego de un error?','¿Regula sus emociones de forma autónoma o necesita ayuda?'],
+   niveles:['No evaluada','Muy bajo (1): Desregulación intensa, abandono frecuente','Bajo (2): Frustración marcada, difícil retomar','Medio (3): Reacciones emocionales moderadas y manejables','Alto (4): Buena regulación con apoyo mínimo','Muy alto (5): Autorregulación consistente y adaptativa']},
   {id:'atencion_sostenida',db:'atencion_sostenida',emoji:'👁️',label:'Atención sostenida',
-   desc:'Mantener el foco durante tareas prolongadas.',
-   inst:'CPT, NEPSY, observación clínica directa',
-   niveles:['No evaluada','Muy bajo: No sostiene atención más de 1-2 minutos','Bajo: Se distrae frecuentemente','Medio: Atención con algunas distracciones','Alto: Buen mantenimiento atencional','Muy alto: Atención sostenida consistente']},
+   desc:'Capacidad para mantener el foco atencional durante tareas prolongadas.',
+   inst:'CPT (Continuous Performance Test), NEPSY, observación clínica',
+   como:'Observá durante toda la sesión. También podés usar una tarea de vigilancia: el niño debe dar un golpe cada vez que escuche la letra "A" en una serie de letras leídas en voz alta a ritmo constante.',
+   observar:['¿Cuánto tiempo mantiene el foco sin distracción?','¿Se distrae con estímulos del ambiente?','¿Necesita reorientación frecuente?','¿La calidad del desempeño decae con el tiempo?','¿Mueve el cuerpo excesivamente (inquietud motora)?'],
+   niveles:['No evaluada','Muy bajo (1): Atención sostenida menos de 2 minutos','Bajo (2): Se distrae a los 2-5 minutos, requiere reorientación','Medio (3): Sostiene 5-10 minutos con algunas distracciones','Alto (4): Sostiene 10-15 minutos con rendimiento estable','Muy alto (5): Atención sostenida consistente, rendimiento estable']},
 ];
 
-const nivelColor=['var(--text-3)','var(--red)','#E07B00','var(--yellow)','#27A06B','var(--primary)'];
+const nivelColor=['var(--text-3)','var(--red)','#E07B00','#D4A017','#27A06B','var(--primary)'];
 const nivelLabel=['—','Muy bajo','Bajo','Medio','Alto','Muy alto'];
 
-function renderFuncionesForm(ev=null){
-  const c=document.getElementById('ev-funciones-container');
-  if(!c)return;
-  c.innerHTML=FE_PROTOCOL.map(fe=>{
-    const val=ev?ev[fe.db]||0:0;
-    const checked=val>0;
-    const obs=ev?ev['obs_'+fe.db]||'':'';
-    return`<div class="fe-item" id="fei-${fe.id}" style="border:1.5px solid ${checked?'var(--primary)':'var(--border)'};border-radius:var(--radius-md);padding:12px 14px;margin-bottom:8px;background:${checked?'var(--primary-light)':'var(--surface)'};transition:all .15s">
-      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:${checked?'12px':'0'}">
-        <input type="checkbox" id="fec-${fe.id}" ${checked?'checked':''} onchange="toggleFuncion('${fe.id}',this.checked)" style="margin-top:3px;width:16px;height:16px;accent-color:var(--primary);cursor:pointer;flex-shrink:0">
-        <div style="flex:1">
-          <label for="fec-${fe.id}" style="font-size:13px;font-weight:600;cursor:pointer;color:${checked?'var(--primary-dark)':'var(--text)'}">${fe.emoji} ${fe.label}</label>
-          <p style="font-size:11px;color:var(--text-3);margin-top:2px">${fe.desc}</p>
-          <p style="font-size:11px;color:var(--primary);margin-top:1px">📐 ${fe.inst}</p>
-        </div>
-      </div>
-      <div id="fe-detail-${fe.id}" style="display:${checked?'block':'none'}">
-        <div style="margin-bottom:10px">
-          <label style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em">Puntuación (1 = Muy bajo · 5 = Muy alto)</label>
-          <div style="display:flex;gap:6px;margin-top:6px" id="stars-${fe.id}"></div>
-          <input type="hidden" id="ev-${fe.id}" value="${val}">
-        </div>
-        <div class="fg" style="margin-bottom:8px">
-          <label>Nivel descriptivo</label>
-          <select id="evn-${fe.id}" onchange="sincNivel('${fe.id}',this.value)">
-            ${fe.niveles.map((n,i)=>`<option value="${i}" ${val===i?'selected':''}>${n}</option>`).join('')}
-          </select>
-        </div>
-        <div class="fg" style="margin-bottom:0">
-          <label>Observaciones específicas</label>
-          <textarea id="evo-${fe.id}" placeholder="Descripción del desempeño, errores, estrategias..." style="min-height:52px">${obs}</textarea>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-  FE_PROTOCOL.forEach(fe=>{
-    const val=ev?ev[fe.db]||0:0;
-    if(val>0)initStarsFor(fe.id,val);
-  });
+// Wizard state
+let wizardFuncs=[];
+let wizardIdx=0;
+let wizardData={};
+let wizardMode='wizard'; // 'wizard' | 'all' | 'single'
+
+function selAllFuncs(val){
+  document.querySelectorAll('.fe-sel-check').forEach(cb=>cb.checked=val);
 }
 
-function initStarsFor(id,val){
-  const wrap=document.getElementById(`stars-${id}`);
-  if(!wrap)return;
-  wrap.innerHTML='';
-  for(let i=1;i<=5;i++){
-    const btn=document.createElement('button');
-    btn.type='button';
-    btn.className='eval-star'+(i<=val?' active':'');
-    btn.textContent=i;
-    btn.onclick=()=>{
-      document.getElementById(`ev-${id}`).value=i;
-      wrap.querySelectorAll('.eval-star').forEach((s,j)=>s.classList.toggle('active',j<i));
-      const sel=document.getElementById(`evn-${id}`);
-      if(sel)sel.value=i;
-    };
-    wrap.appendChild(btn);
-  }
-}
-
-function sincNivel(id,val){
-  const v=parseInt(val);
-  document.getElementById(`ev-${id}`).value=v;
-  const wrap=document.getElementById(`stars-${id}`);
-  if(wrap)wrap.querySelectorAll('.eval-star').forEach((s,j)=>s.classList.toggle('active',j<v));
-}
-
-function toggleFuncion(id,checked){
-  const detail=document.getElementById(`fe-detail-${id}`);
-  const item=document.getElementById(`fei-${id}`);
-  detail.style.display=checked?'block':'none';
-  item.style.borderColor=checked?'var(--primary)':'var(--border)';
-  item.style.background=checked?'var(--primary-light)':'var(--surface)';
-  const lbl=item.querySelector('label');
-  if(lbl)lbl.style.color=checked?'var(--primary-dark)':'var(--text)';
-  if(checked){initStarsFor(id,0);document.getElementById(`ev-${id}`).value=0;}
-}
-
-function abrirNuevaEval(){
+function abrirNuevaEval(pacId=null){
   document.getElementById('ev-id').value='';
   document.getElementById('ev-fecha').value=today();
   document.getElementById('ev-tipo').value='inicial';
   document.getElementById('ev-instrumento').value='';
   document.getElementById('ev-obs').value='';
-  document.getElementById('mo-eval-titulo').textContent='Nueva evaluación';
-  renderFuncionesForm(null);
+  // Fill patient selector
+  const sel=document.getElementById('ev-pac-id');
+  sel.innerHTML='<option value="">— seleccioná un paciente —</option>'+pacientes.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+  if(pacId)sel.value=pacId;
+  else if(curPId)sel.value=curPId;
+  // Render function selectors
+  const c=document.getElementById('eval-func-selector');
+  c.innerHTML=FE_PROTOCOL.map(fe=>`<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface-2);border-radius:var(--radius-md);cursor:pointer;border:1.5px solid var(--border);transition:all .15s">
+    <input type="checkbox" class="fe-sel-check" data-id="${fe.id}" checked style="width:15px;height:15px;accent-color:var(--primary);cursor:pointer">
+    <span style="font-size:13px">${fe.emoji} ${fe.label}</span>
+  </label>`).join('');
+  wizardData={};
+  // Show step 0
+  document.getElementById('eval-step-0').style.display='block';
+  document.getElementById('eval-step-n').style.display='none';
+  document.getElementById('eval-step-final').style.display='none';
   openMo('mo-eval');
 }
 
@@ -2075,29 +2049,174 @@ function abrirEditarEval(ev){
   document.getElementById('ev-tipo').value=ev.tipo||'inicial';
   document.getElementById('ev-instrumento').value=ev.instrumento||'';
   document.getElementById('ev-obs').value=ev.observaciones||'';
-  document.getElementById('mo-eval-titulo').textContent='Editar evaluación';
-  renderFuncionesForm(ev);
+  const sel=document.getElementById('ev-pac-id');
+  sel.innerHTML='<option value="">— seleccioná —</option>'+pacientes.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+  sel.value=ev.paciente_id||'';
+  const c=document.getElementById('eval-func-selector');
+  c.innerHTML=FE_PROTOCOL.map(fe=>`<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface-2);border-radius:var(--radius-md);cursor:pointer;border:1.5px solid var(--border)">
+    <input type="checkbox" class="fe-sel-check" data-id="${fe.id}" ${ev[fe.db]>0?'checked':''} style="width:15px;height:15px;accent-color:var(--primary);cursor:pointer">
+    <span style="font-size:13px">${fe.emoji} ${fe.label}</span>
+  </label>`).join('');
+  // Pre-load wizard data
+  wizardData={};
+  FE_PROTOCOL.forEach(fe=>{
+    if(ev[fe.db]>0){wizardData[fe.id]={puntuacion:ev[fe.db],nivel:ev[fe.db],obs:ev['obs_'+fe.db]||''};}
+  });
+  document.getElementById('eval-step-0').style.display='block';
+  document.getElementById('eval-step-n').style.display='none';
+  document.getElementById('eval-step-final').style.display='none';
   openMo('mo-eval');
 }
 
+function iniciarWizard(){
+  const pacId=document.getElementById('ev-pac-id').value;
+  if(!pacId){alert('Seleccioná un paciente.');return;}
+  const checks=document.querySelectorAll('.fe-sel-check:checked');
+  if(!checks.length){alert('Seleccioná al menos una función.');return;}
+  wizardFuncs=Array.from(checks).map(cb=>FE_PROTOCOL.find(f=>f.id===cb.dataset.id)).filter(Boolean);
+  wizardIdx=0;
+  document.getElementById('eval-step-0').style.display='none';
+  document.getElementById('eval-step-n').style.display='block';
+  renderWizardStep();
+}
+
+function renderWizardStep(){
+  const fe=wizardFuncs[wizardIdx];
+  const total=wizardFuncs.length;
+  const prev=wizardData[fe.id]||{};
+  // Progress
+  document.getElementById('eval-progreso').textContent=`Función ${wizardIdx+1} de ${total}`;
+  document.getElementById('eval-barra-fill').style.width=`${((wizardIdx)/total)*100}%`;
+  // Dots
+  document.getElementById('eval-dots').innerHTML=wizardFuncs.map((f,i)=>`<div style="width:8px;height:8px;border-radius:50%;background:${i<wizardIdx?'var(--green)':i===wizardIdx?'var(--primary)':'var(--border)'};transition:all .3s"></div>`).join('');
+  const val=prev.puntuacion||0;
+  document.getElementById('eval-func-content').innerHTML=`
+    <div style="background:linear-gradient(135deg,var(--primary-light),#EDE9FE);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px">
+      <p style="font-size:22px;margin-bottom:4px">${fe.emoji}</p>
+      <p style="font-size:17px;font-weight:700;color:var(--primary-dark)">${fe.label}</p>
+      <p style="font-size:13px;color:var(--primary);margin-top:4px">${fe.desc}</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px;border:1px solid var(--border-light)">
+        <p style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📐 Instrumento</p>
+        <p style="font-size:12px;color:var(--text)">${fe.inst}</p>
+      </div>
+      <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px;border:1px solid var(--border-light)">
+        <p style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📋 Cómo aplicar</p>
+        <p style="font-size:12px;color:var(--text)">${fe.como}</p>
+      </div>
+    </div>
+    <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px;margin-bottom:14px;border:1px solid var(--border-light)">
+      <p style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">👁️ Qué observar</p>
+      ${fe.observar.map(o=>`<div style="display:flex;gap:8px;margin-bottom:5px"><span style="color:var(--primary);font-size:12px;flex-shrink:0">→</span><p style="font-size:12px;color:var(--text)">${o}</p></div>`).join('')}
+    </div>
+    <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px;margin-bottom:14px;border:1px solid var(--border-light)">
+      <p style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">📊 Niveles de desempeño</p>
+      ${fe.niveles.slice(1).map((n,i)=>`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px"><span style="font-size:11px;font-weight:700;color:${nivelColor[i+1]};min-width:14px">${i+1}</span><p style="font-size:12px;color:var(--text)">${n}</p></div>`).join('')}
+    </div>
+    <div style="margin-bottom:12px">
+      <p style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:8px">Puntuación</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="wiz-stars"></div>
+      <input type="hidden" id="wiz-val" value="${val}">
+      <p style="font-size:12px;color:var(--text-2);margin-top:6px" id="wiz-nivel-txt">${val>0?fe.niveles[val]:'Seleccioná una puntuación'}</p>
+    </div>
+    <div class="fg" style="margin-bottom:0">
+      <label>Observaciones específicas</label>
+      <textarea id="wiz-obs" placeholder="Describí el desempeño, errores, estrategias observadas..." style="min-height:70px">${prev.obs||''}</textarea>
+    </div>`;
+  
+  // Render stars
+  const starsEl=document.getElementById('wiz-stars');
+  for(let i=1;i<=5;i++){
+    const btn=document.createElement('button');
+    btn.type='button';
+    btn.style.cssText=`width:40px;height:40px;border-radius:var(--radius-md);border:2px solid ${i<=val?'var(--primary)':'var(--border)'};background:${i<=val?'var(--primary)':'var(--surface-2)'};color:${i<=val?'#fff':'var(--text-3)'};font-size:15px;font-weight:700;cursor:pointer;transition:all .15s`;
+    btn.textContent=i;
+    btn.onclick=()=>{
+      document.getElementById('wiz-val').value=i;
+      starsEl.querySelectorAll('button').forEach((s,j)=>{
+        s.style.background=j<i?'var(--primary)':'var(--surface-2)';
+        s.style.color=j<i?'#fff':'var(--text-3)';
+        s.style.borderColor=j<i?'var(--primary)':'var(--border)';
+      });
+      document.getElementById('wiz-nivel-txt').textContent=fe.niveles[i];
+      document.getElementById('wiz-nivel-txt').style.color=nivelColor[i];
+    };
+    starsEl.appendChild(btn);
+  }
+
+  // Actions
+  const actions=document.getElementById('eval-wizard-actions');
+  actions.innerHTML=`
+    <button class="btn-s" onclick="closeMo('mo-eval')">Cancelar</button>
+    ${wizardIdx>0?'<button class="btn-s" onclick="wizardPrev()">← Anterior</button>':''}
+    <button class="btn-s" onclick="wizardSkip()">Omitir</button>
+    <button class="btn-p" onclick="wizardNext()">${wizardIdx===wizardFuncs.length-1?'Ver resumen →':'Siguiente →'}</button>`;
+}
+
+function guardarWizardStep(){
+  const fe=wizardFuncs[wizardIdx];
+  const val=parseInt(document.getElementById('wiz-val').value)||0;
+  const obs=document.getElementById('wiz-obs').value.trim();
+  wizardData[fe.id]={puntuacion:val,obs};
+}
+
+function wizardNext(){
+  guardarWizardStep();
+  if(wizardIdx===wizardFuncs.length-1){mostrarResumen();}
+  else{wizardIdx++;renderWizardStep();}
+}
+
+function wizardPrev(){
+  guardarWizardStep();
+  wizardIdx--;renderWizardStep();
+}
+
+function wizardSkip(){
+  wizardData[wizardFuncs[wizardIdx].id]={puntuacion:0,obs:''};
+  if(wizardIdx===wizardFuncs.length-1){mostrarResumen();}
+  else{wizardIdx++;renderWizardStep();}
+}
+
+function volverWizard(){
+  wizardIdx=wizardFuncs.length-1;
+  document.getElementById('eval-step-final').style.display='none';
+  document.getElementById('eval-step-n').style.display='block';
+  renderWizardStep();
+}
+
+function mostrarResumen(){
+  document.getElementById('eval-barra-fill').style.width='100%';
+  document.getElementById('eval-step-n').style.display='none';
+  document.getElementById('eval-step-final').style.display='block';
+  const fesEval=wizardFuncs.filter(fe=>wizardData[fe.id]&&wizardData[fe.id].puntuacion>0);
+  const prom=fesEval.length?(fesEval.reduce((a,fe)=>a+wizardData[fe.id].puntuacion,0)/fesEval.length).toFixed(1):'-';
+  document.getElementById('eval-resumen-content').innerHTML=`
+    <div style="background:var(--primary-light);border-radius:var(--radius-md);padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:14px">
+      <div style="text-align:center"><p style="font-size:28px;font-weight:800;color:var(--primary)">${prom}</p><p style="font-size:11px;color:var(--primary-dark)">promedio</p></div>
+      <div>${fesEval.map(fe=>{const d=wizardData[fe.id];const v=d.puntuacion;return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span>${fe.emoji}</span><span style="font-size:13px;font-weight:500">${fe.label}</span><span class="badge" style="background:${nivelColor[v]}22;color:${nivelColor[v]};margin-left:auto">${nivelLabel[v]}</span></div>`;}).join('')}</div>
+    </div>
+    ${wizardFuncs.filter(fe=>!wizardData[fe.id]||wizardData[fe.id].puntuacion===0).length?`<p style="font-size:12px;color:var(--text-3);margin-bottom:12px">⚠️ ${wizardFuncs.filter(fe=>!wizardData[fe.id]||wizardData[fe.id].puntuacion===0).length} función/es omitida/s no se guardarán.</p>`:''}`;
+}
+
 async function guardarEvaluacion(){
+  const pacId=document.getElementById('ev-pac-id').value;
+  if(!pacId){alert('Seleccioná un paciente.');return;}
   const editId=document.getElementById('ev-id').value;
-  const datos={paciente_id:curPId,fecha:document.getElementById('ev-fecha').value,tipo:document.getElementById('ev-tipo').value,instrumento:document.getElementById('ev-instrumento').value||null,observaciones:document.getElementById('ev-obs').value.trim()||null};
-  let algunaEval=false;
+  const datos={paciente_id:parseInt(pacId),fecha:document.getElementById('ev-fecha').value,tipo:document.getElementById('ev-tipo').value,instrumento:document.getElementById('ev-instrumento').value||null,observaciones:document.getElementById('ev-obs').value.trim()||null};
   FE_PROTOCOL.forEach(fe=>{
-    const checked=document.getElementById(`fec-${fe.id}`).checked;
-    datos[fe.db]=checked?parseFloat(document.getElementById(`ev-${fe.id}`).value)||null:null;
-    const o=document.getElementById(`evo-${fe.id}`);
-    datos['obs_'+fe.db]=checked&&o?o.value.trim()||null:null;
-    if(checked)algunaEval=true;
+    const d=wizardData[fe.id];
+    datos[fe.db]=d&&d.puntuacion>0?d.puntuacion:null;
+    datos['obs_'+fe.db]=d&&d.obs?d.obs:null;
   });
-  if(!algunaEval){alert('Seleccioná al menos una función para evaluar.');return;}
   let error;
   if(editId){({error}=await db.from('evaluaciones').update(datos).eq('id',editId));}
   else{({error}=await db.from('evaluaciones').insert(datos));}
   if(error){alert('Error: '+error.message);return;}
-  closeMo('mo-eval');toast(editId?'Evaluación actualizada ✓':'Evaluación guardada ✓');
-  loadEvaluaciones();
+  closeMo('mo-eval');
+  toast(editId?'Evaluación actualizada ✓':'Evaluación guardada ✓');
+  if(curPId===parseInt(pacId))loadEvaluaciones();
+  renderEvalGlobal();
 }
 
 async function eliminarEvaluacion(id){
@@ -2113,42 +2232,39 @@ async function loadEvaluaciones(){
   if(error){el.innerHTML='<div class="empty">Error al cargar.</div>';return;}
   const evals=data||[];
   if(!evals.length){
-    el.innerHTML=`<div style="text-align:center;padding:30px"><p style="font-size:32px;margin-bottom:10px">📊</p><p style="font-size:14px;font-weight:600">Sin evaluaciones registradas</p><p style="font-size:13px;color:var(--text-3);margin:6px 0 16px">Registrá la primera evaluación</p><button class="btn-p" onclick="abrirNuevaEval()">+ Nueva evaluación</button></div>`;
-    return;
+    el.innerHTML=`<div style="text-align:center;padding:30px"><p style="font-size:32px;margin-bottom:10px">📊</p><p style="font-size:14px;font-weight:600">Sin evaluaciones registradas</p><button class="btn-p" style="margin-top:14px" onclick="abrirNuevaEval(${curPId})">+ Nueva evaluación</button></div>`;return;
   }
   const tipoLabel={inicial:'Inicial',seguimiento:'Seguimiento',cierre:'Cierre'};
   const tipoCls={inicial:'eval-tipo-inicial',seguimiento:'eval-tipo-seguimiento',cierre:'eval-tipo-cierre'};
-
   function radarSVG(ev){
     const fes=FE_PROTOCOL.filter(f=>ev[f.db]>0);if(fes.length<3)return'';
-    const n=fes.length,vals=fes.map(f=>(ev[f.db]||0)/5),cx=100,cy=100,r=70;
-    const pts=vals.map((v,i)=>{const a=(i/n)*2*Math.PI-Math.PI/2;return[cx+r*v*Math.cos(a),cy+r*v*Math.sin(a)];});
+    const n=fes.length,cx=100,cy=100,r=68;
+    const pts=fes.map((f,i)=>{const v=(ev[f.db]||0)/5,a=(i/n)*2*Math.PI-Math.PI/2;return[cx+r*v*Math.cos(a),cy+r*v*Math.sin(a)];});
     const grid=[.2,.4,.6,.8,1].map(g=>{const gp=fes.map((_,i)=>{const a=(i/n)*2*Math.PI-Math.PI/2;return[cx+r*g*Math.cos(a),cy+r*g*Math.sin(a)];});return`<polygon points="${gp.map(p=>p.join(',')).join(' ')}" fill="none" stroke="var(--border)" stroke-width="1"/>`;}).join('');
     const axes=fes.map((_,i)=>{const a=(i/n)*2*Math.PI-Math.PI/2;return`<line x1="${cx}" y1="${cy}" x2="${cx+r*Math.cos(a)}" y2="${cy+r*Math.sin(a)}" stroke="var(--border)" stroke-width="1"/>`;}).join('');
     const labs=fes.map((f,i)=>{const a=(i/n)*2*Math.PI-Math.PI/2;return`<text x="${cx+(r+14)*Math.cos(a)}" y="${cy+(r+14)*Math.sin(a)}" text-anchor="middle" dominant-baseline="middle" font-size="11">${f.emoji}</text>`;}).join('');
-    return`<svg viewBox="0 0 200 200" width="140" height="140"><g>${grid}${axes}</g><polygon points="${pts.map(p=>p.join(',')).join(' ')}" fill="rgba(108,71,255,0.12)" stroke="var(--primary)" stroke-width="2"/>${labs}</svg>`;
+    return`<svg viewBox="0 0 200 200" width="130" height="130"><g>${grid}${axes}</g><polygon points="${pts.map(p=>p.join(',')).join(' ')}" fill="rgba(108,71,255,0.12)" stroke="var(--primary)" stroke-width="2"/>${labs}</svg>`;
   }
-
-  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><p style="font-size:13px;color:var(--text-2)">${evals.length} evaluación${evals.length>1?'es':''}</p><button class="btn-p btn-sm" onclick="abrirNuevaEval()">+ Nueva evaluación</button></div>`+
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><p style="font-size:13px;color:var(--text-2)">${evals.length} evaluación${evals.length>1?'es':''}</p><button class="btn-p btn-sm" onclick="abrirNuevaEval(${curPId})">+ Nueva evaluación</button></div>`+
   evals.map((ev,idx)=>{
     const fesEval=FE_PROTOCOL.filter(f=>ev[f.db]>0);
     const prom=fesEval.length?(fesEval.reduce((a,f)=>a+(ev[f.db]||0),0)/fesEval.length).toFixed(1):'-';
+    const evStr=JSON.stringify(ev).replace(/'/g,"&#39;").replace(/"/g,"&quot;");
     return`<div class="eval-card">
       <div class="eval-card-head">
-        <div>
-          <span class="eval-tipo-badge ${tipoCls[ev.tipo]||'eval-tipo-inicial'}">${tipoLabel[ev.tipo]||ev.tipo}</span>
+        <div><span class="eval-tipo-badge ${tipoCls[ev.tipo]||'eval-tipo-inicial'}">${tipoLabel[ev.tipo]||ev.tipo}</span>
           ${ev.instrumento?`<span class="badge b-gray" style="margin-left:4px;font-size:10px">${ev.instrumento}</span>`:''}
           <p style="font-size:13px;color:var(--text-2);margin-top:4px">${fmtDate(ev.fecha)} ${idx===0?'<span class="badge b-purple" style="font-size:10px">Más reciente</span>':''}</p>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
-          ${fesEval.length?`<div style="text-align:center"><p style="font-size:22px;font-weight:800;color:var(--primary)">${prom}</p><p style="font-size:10px;color:var(--text-3)">${fesEval.length} func.</p></div>`:''}
-          <button class="btn-edit btn-sm" onclick='abrirEditarEval(${JSON.stringify(ev).replace(/'/g,"&#39;").replace(/"/g,"&quot;")})'>✏️</button>
+          ${fesEval.length?`<div style="text-align:center"><p style="font-size:20px;font-weight:800;color:var(--primary)">${prom}</p><p style="font-size:10px;color:var(--text-3)">${fesEval.length} func.</p></div>`:''}
+          <button class="btn-edit btn-sm" onclick='abrirEditarEval(${evStr})'>✏️</button>
           <button class="task-del" onclick="eliminarEvaluacion(${ev.id})">×</button>
         </div>
       </div>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;margin-bottom:${ev.observaciones?'12px':'0'}">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:${ev.observaciones?'12px':'0'}">
         ${radarSVG(ev)}
-        <div style="flex:1;min-width:180px">
+        <div style="flex:1;min-width:160px">
           ${fesEval.map(fe=>{const val=ev[fe.db]||0;const obsF=ev['obs_'+fe.db];return`<div class="eval-bar-wrap">
             <div class="eval-bar-label"><span>${fe.emoji} ${fe.label}</span><span style="color:${nivelColor[val]};font-weight:700">${val}/5 — ${nivelLabel[val]}</span></div>
             <div class="eval-bar-bg"><div class="eval-bar-fill" style="width:${(val/5)*100}%;background:${nivelColor[val]}"></div></div>
@@ -2163,19 +2279,15 @@ async function loadEvaluaciones(){
 
 // ─── EVALUACIONES GLOBAL ─────────────────────────────────
 let evalGlobalFiltro='';
-
 async function renderEvalGlobal(){
-  const el=document.getElementById('eval-global-c');
-  if(!el)return;
+  const el=document.getElementById('eval-global-c');if(!el)return;
   el.innerHTML='<div class="loading">Cargando...</div>';
   const {data,error}=await db.from('evaluaciones').select('*').order('fecha',{ascending:false});
-  if(error){el.innerHTML='<div class="empty">Error al cargar.</div>';return;}
-  const evals=data||[];
-  if(!evals.length){el.innerHTML=`<div style="text-align:center;padding:40px"><p style="font-size:40px;margin-bottom:12px">📊</p><p style="font-size:15px;font-weight:600">Sin evaluaciones registradas</p><p style="font-size:13px;color:var(--text-3);margin-top:6px">Las evaluaciones se crean desde el detalle de cada paciente</p></div>`;return;}
+  if(error||!data||!data.length){el.innerHTML=`<div style="text-align:center;padding:40px"><p style="font-size:40px;margin-bottom:12px">📊</p><p style="font-size:15px;font-weight:600">Sin evaluaciones registradas</p><p style="font-size:13px;color:var(--text-3);margin-top:6px">Creá una nueva desde el botón o desde el detalle de un paciente</p><button class="btn-p" style="margin-top:14px" onclick="abrirNuevaEval()">+ Nueva evaluación</button></div>`;return;}
   const tipoLabel={inicial:'Inicial',seguimiento:'Seguimiento',cierre:'Cierre'};
   const tipoCls={inicial:'eval-tipo-inicial',seguimiento:'eval-tipo-seguimiento',cierre:'eval-tipo-cierre'};
   const porPaciente={};
-  evals.forEach(ev=>{if(!porPaciente[ev.paciente_id])porPaciente[ev.paciente_id]=[];porPaciente[ev.paciente_id].push(ev);});
+  data.forEach(ev=>{if(!porPaciente[ev.paciente_id])porPaciente[ev.paciente_id]=[];porPaciente[ev.paciente_id].push(ev);});
   const f=evalGlobalFiltro.toLowerCase();
   let html='';
   Object.entries(porPaciente).forEach(([pid,evs])=>{
@@ -2185,28 +2297,23 @@ async function renderEvalGlobal(){
     const fesEval=FE_PROTOCOL.filter(fe=>ultima[fe.db]>0);
     const prom=fesEval.length?(fesEval.reduce((a,fe)=>a+(ultima[fe.db]||0),0)/fesEval.length).toFixed(1):'-';
     html+=`<div class="card" style="margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
         <div class="avatar" style="width:40px;height:40px;font-size:14px">${inic(p.nombre)}</div>
         <div style="flex:1"><p style="font-weight:600;font-size:14px">${p.nombre}</p><p style="font-size:12px;color:var(--text-3)">${evs.length} evaluación${evs.length>1?'es':''} · Última: ${fmtDate(ultima.fecha)}</p></div>
         ${prom!=='-'?`<div style="text-align:center"><p style="font-size:22px;font-weight:800;color:var(--primary)">${prom}</p><p style="font-size:10px;color:var(--text-3)">promedio</p></div>`:''}
-        <button class="btn-s btn-sm" onclick="verP(${p.id});setTimeout(()=>{const tabs=document.querySelectorAll('#mo-det .dtab');if(tabs[5])showDTab('dt-eval',tabs[5]);loadEvaluaciones();},300)">Ver detalle</button>
+        <button class="btn-s btn-sm" onclick="verP(${p.id});setTimeout(()=>{const tabs=document.querySelectorAll('#mo-det .dtab');if(tabs[5])showDTab('dt-eval',tabs[5]);loadEvaluaciones();},300)">Ver</button>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px">
-        ${fesEval.map(fe=>{const val=ultima[fe.db]||0;return`<div style="background:var(--surface-2);border-radius:var(--radius-md);padding:8px 10px;border:1px solid var(--border-light)">
-          <p style="font-size:11px;color:var(--text-3);margin-bottom:4px">${fe.emoji} ${fe.label}</p>
-          <div class="eval-bar-bg"><div class="eval-bar-fill" style="width:${(val/5)*100}%;background:${nivelColor[val]}"></div></div>
-          <p style="font-size:12px;font-weight:700;color:${nivelColor[val]};margin-top:3px">${nivelLabel[val]}</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px">
+        ${fesEval.map(fe=>{const val=ultima[fe.db]||0;return`<div style="background:var(--surface-2);border-radius:var(--radius-md);padding:8px;border:1px solid var(--border-light);text-align:center">
+          <p style="font-size:16px">${fe.emoji}</p>
+          <div class="eval-bar-bg" style="margin:4px 0"><div class="eval-bar-fill" style="width:${(val/5)*100}%;background:${nivelColor[val]}"></div></div>
+          <p style="font-size:11px;font-weight:700;color:${nivelColor[val]}">${nivelLabel[val]}</p>
         </div>`;}).join('')}
       </div>
-      ${evs.length>1?`<details style="margin-top:10px"><summary style="font-size:12px;color:var(--text-2);cursor:pointer;font-weight:500">Ver historial (${evs.length} evaluaciones)</summary>
-        <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
-          ${evs.map(ev=>{const fes=FE_PROTOCOL.filter(f=>ev[f.db]>0);const p2=fes.length?(fes.reduce((a,f)=>a+(ev[f.db]||0),0)/fes.length).toFixed(1):'-';return`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface-2);border-radius:var(--radius-md)"><span class="eval-tipo-badge ${tipoCls[ev.tipo]||'eval-tipo-inicial'}">${tipoLabel[ev.tipo]||ev.tipo}</span><span style="font-size:12px;color:var(--text-2)">${fmtDate(ev.fecha)}</span><span style="font-size:13px;font-weight:700;color:var(--primary);margin-left:auto">${p2} prom.</span></div>`;}).join('')}
-        </div></details>`:''}
     </div>`;
   });
-  el.innerHTML=html||'<div class="empty">No se encontraron pacientes.</div>';
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><p style="font-size:13px;color:var(--text-2)">${data.length} evaluaciones · ${Object.keys(porPaciente).length} pacientes</p><button class="btn-p btn-sm" onclick="abrirNuevaEval()">+ Nueva evaluación</button></div>`+(html||'<div class="empty">No se encontraron resultados.</div>');
 }
-
 function filtrarEvalGlobal(v){evalGlobalFiltro=v;renderEvalGlobal();}
 
 // ─── ARCHIVOS ────────────────────────────────────────────
