@@ -545,23 +545,85 @@ body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); 
     <span class="ptitle">Agenda</span>
     <button class="btn-p" onclick="openMoAgenda()">+ Agregar</button>
   </div>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-    <div class="seg-ctrl" id="agenda-vistas">
-      <button class="seg-btn active" onclick="setAgendaView('semana',this)">Semana</button>
-      <button class="seg-btn" onclick="setAgendaView('mes',this)">Mes</button>
-      <button class="seg-btn" onclick="setAgendaView('lista',this)">Lista</button>
+
+  <!-- Pestañas principales de Agenda -->
+  <div class="dtabs" id="agenda-tabs" style="margin-bottom:18px">
+    <button class="dtab active" id="atab-resumen" onclick="setAgendaTab('resumen',this)">📊 Resumen</button>
+    <button class="dtab" id="atab-hoy" onclick="setAgendaTab('hoy',this)">📅 Hoy</button>
+    <button class="dtab" id="atab-turnos" onclick="setAgendaTab('turnos',this)">🗓 Turnos</button>
+    <button class="dtab" id="atab-tareas" onclick="setAgendaTab('tareas',this)">✅ Tareas</button>
+  </div>
+
+  <!-- ─── PESTAÑA: RESUMEN ─── -->
+  <div id="agenda-tab-resumen" class="agenda-tab-content">
+    <!-- Métricas rápidas -->
+    <div class="dash-grid" id="agenda-dash-stats" style="margin-bottom:20px"></div>
+
+    <!-- Dos columnas: Turnos de hoy + Próximos eventos -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:20px">
+      <div>
+        <p style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Turnos de hoy</p>
+        <div id="agenda-turnos-hoy"></div>
+      </div>
+      <div>
+        <p style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Próximos eventos y tareas</p>
+        <div id="agenda-proximos"></div>
+      </div>
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap" id="agenda-filtros">
-      <button class="cat-chip" onclick="filtrarAgenda('todos',this)">Todos</button>
-      <button class="cat-chip" onclick="filtrarAgenda('evento',this)">Eventos</button>
-      <button class="cat-chip" onclick="filtrarAgenda('tarea',this)">Tareas</button>
-      <button class="cat-chip active" onclick="filtrarAgenda('pendiente',this)">Pendientes</button>
-      <button class="cat-chip" onclick="filtrarAgenda('hecha',this)">Completadas</button>
+
+    <!-- Tareas vencidas -->
+    <div id="agenda-vencidas-wrap" style="margin-bottom:20px">
+      <p style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">⚠️ Tareas vencidas</p>
+      <div id="agenda-vencidas"></div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+      <button class="btn-p" onclick="openMoAgenda()">+ Nueva tarea / evento</button>
+      <button class="btn-s" onclick="setAgendaTab('hoy',document.getElementById('atab-hoy'))">Ver turnos de hoy →</button>
+      <button class="btn-s" onclick="setAgendaTab('turnos',document.getElementById('atab-turnos'))">Ver agenda semanal →</button>
     </div>
   </div>
-  <div id="agenda-semana-v"><div id="agenda-semana-c"></div></div>
-  <div id="agenda-mes-v" style="display:none"><div id="agenda-mes-c"></div></div>
-  <div id="agenda-lista-v" style="display:none"><div id="tasks-c"></div></div>
+
+  <!-- ─── PESTAÑA: HOY ─── -->
+  <div id="agenda-tab-hoy" class="agenda-tab-content" style="display:none">
+    <div id="agenda-hoy-fecha" style="font-size:13px;color:var(--text-2);margin-bottom:14px;font-weight:500"></div>
+    <div id="agenda-hoy-c"></div>
+  </div>
+
+  <!-- ─── PESTAÑA: TURNOS ─── -->
+  <div id="agenda-tab-turnos" class="agenda-tab-content" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div class="seg-ctrl" id="agenda-vistas">
+        <button class="seg-btn active" onclick="setAgendaView('semana',this)">Semana</button>
+        <button class="seg-btn" onclick="setAgendaView('mes',this)">Mes</button>
+        <button class="seg-btn" onclick="setAgendaView('lista',this)">Lista</button>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="agenda-filtros">
+        <button class="cat-chip" onclick="filtrarAgenda('todos',this)">Todos</button>
+        <button class="cat-chip" onclick="filtrarAgenda('evento',this)">Eventos</button>
+        <button class="cat-chip" onclick="filtrarAgenda('tarea',this)">Tareas</button>
+        <button class="cat-chip active" onclick="filtrarAgenda('pendiente',this)">Pendientes</button>
+        <button class="cat-chip" onclick="filtrarAgenda('hecha',this)">Completadas</button>
+      </div>
+    </div>
+    <div id="agenda-semana-v"><div id="agenda-semana-c"></div></div>
+    <div id="agenda-mes-v" style="display:none"><div id="agenda-mes-c"></div></div>
+    <div id="agenda-lista-v" style="display:none"><div id="tasks-c"></div></div>
+  </div>
+
+  <!-- ─── PESTAÑA: TAREAS ─── -->
+  <div id="agenda-tab-tareas" class="agenda-tab-content" style="display:none">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <div class="seg-ctrl" id="tareas-estado-ctrl">
+        <button class="seg-btn active" onclick="filtrarTareasPanel('pendiente',this)">Pendientes</button>
+        <button class="seg-btn" onclick="filtrarTareasPanel('vencidas',this)">Vencidas</button>
+        <button class="seg-btn" onclick="filtrarTareasPanel('hecha',this)">Completadas</button>
+        <button class="seg-btn" onclick="filtrarTareasPanel('todas',this)">Todas</button>
+      </div>
+    </div>
+    <div id="tareas-panel-c"></div>
+  </div>
 </div>
 
 </div>
@@ -868,7 +930,7 @@ function showSec(name,btn,isMobile=false){
   btn.classList.add('active');
   const other=isMobile?document.querySelector('.sb[onclick*=\"\'+name+\'\"]'):document.getElementById('bn-'+name);
   if(other)other.classList.add('active');
-  if(name==='tareas'){setAgendaView(agendaView||'semana',document.querySelector('#agenda-vistas .seg-btn'));}
+  if(name==='tareas'){setAgendaTab(agendaTab||'resumen',document.getElementById('atab-'+(agendaTab||'resumen')));}
   if(name==='dashboard')renderDashboard();
   if(name==='evaluaciones'){renderEvalGlobal();}
   if(name==='asistencia'){document.getElementById('fecha-asi').value=today();renderAsi();}
@@ -1182,7 +1244,10 @@ async function guardarTask(){
     toast('Entrada guardada ✓');
   }
   closeMo('mo-tarea');
-  if(agendaView==='semana')renderAgendaSemana();
+  if(agendaTab==='resumen')renderAgendaResumen();
+  else if(agendaTab==='hoy')renderAgendaHoy();
+  else if(agendaTab==='tareas')renderTareasPanel();
+  else if(agendaView==='semana')renderAgendaSemana();
   else if(agendaView==='mes')renderMes();
   else renderLista();
   updateTaskBadge();
@@ -1196,7 +1261,10 @@ async function toggleTask(id){
   t.estado=ne;
   updateTaskBadge();
   // Refresh whichever view is active
-  if(agendaView==='semana')renderAgendaSemana();
+  if(agendaTab==='resumen')renderAgendaResumen();
+  else if(agendaTab==='hoy')renderAgendaHoy();
+  else if(agendaTab==='tareas')renderTareasPanel();
+  else if(agendaView==='semana')renderAgendaSemana();
   else if(agendaView==='mes')renderMes();
   else renderLista();
   if(document.getElementById('sec-dashboard').classList.contains('vis'))renderDashboard();
@@ -1624,74 +1692,6 @@ function getTasksFiltrados(){
   return list;
 }
 
-function renderAgendaSemana(){
-  const el=document.getElementById('agenda-semana-c');
-  const hoy=new Date();
-  const lunes=new Date(hoy);
-  lunes.setDate(hoy.getDate()-((hoy.getDay()+6)%7));
-  let html='';
-  
-  for(let i=0;i<7;i++){
-    const dia=new Date(lunes);
-    dia.setDate(lunes.getDate()+i);
-    const diaStr=dia.toISOString().split('T')[0];
-    const esHoy=diaStr===today();
-    const nombreDia=dia.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'short'});
-    
-    // Turnos del día
-    const diaSem=DIAS[dia.getDay()-1];
-    const turnos=diaSem?pacientes.filter(p=>(p.turnos||[]).some(t=>t.dia===diaSem)):[];
-    
-    // Tareas/eventos del día
-    const tareasDelDia=getTasksFiltrados().filter(t=>{
-      const f=t.fecha_vencimiento||t.fecha_inicio;
-      return f===diaStr;
-    }).sort((a,b)=>(a.fecha_hora||'').localeCompare(b.fecha_hora||''));
-    
-    if(!turnos.length&&!tareasDelDia.length&&!esHoy)continue;
-    
-    html+=`<div class="semana-col">
-      <div class="semana-header ${esHoy?'hoy':''}">
-        <span>${nombreDia.charAt(0).toUpperCase()+nombreDia.slice(1)}</span>
-        ${esHoy?'<span class="badge b-purple">Hoy</span>':''}
-      </div>`;
-    
-    // Mostrar turnos
-    turnos.forEach(p=>{
-      const ts=(p.turnos||[]).filter(t=>t.dia===diaSem);
-      ts.forEach(t=>{
-        html+=`<div class="semana-slot">
-          <span class="semana-hora">${t.inicio||''}${t.fin?'-'+t.fin:''}</span>
-          <div class="avatar" style="width:24px;height:24px;font-size:9px">${inic(p.nombre)}</div>
-          <span style="font-size:13px;flex:1">${p.nombre}</span>
-          <button class="btn-s btn-sm" onclick="verP(${p.id})">Ver</button>
-        </div>`;
-      });
-    });
-    
-    // Mostrar tareas/eventos
-    tareasDelDia.forEach(t=>{
-      const pac=t.paciente_id?pacientes.find(x=>x.id===t.paciente_id):null;
-      const esEvento=t.tipo_entrada==='evento';
-      const done=t.estado==='hecha';
-      html+=`<div class="semana-slot" style="${done?'opacity:.5':''}">
-        <span class="semana-hora">${t.fecha_hora||''}</span>
-        <span style="font-size:16px">${esEvento?'📅':'✅'}</span>
-        <div style="flex:1">
-          <p style="font-size:13px;font-weight:500;${done?'text-decoration:line-through;color:#999':''}">${t.descripcion||t.tipo}</p>
-          ${pac?`<p style="font-size:11px;color:#888">${pac.nombre}</p>`:''}
-        </div>
-        <div style="display:flex;gap:4px">
-          <button class="btn-edit btn-sm" onclick="openMoAgenda(tasks.find(x=>x.id===${t.id}))">✏️</button>
-          <div class="task-check ${done?'done':''}" onclick="toggleTask(${t.id})" style="cursor:pointer;margin-top:2px"></div>
-        </div>
-      </div>`;
-    });
-    
-    html+='</div>';
-  }
-  el.innerHTML=html||'<div class="empty">No hay actividades esta semana.</div>';
-}
 
 function renderMes(){
   const el=document.getElementById('agenda-mes-c');
@@ -2440,45 +2440,300 @@ async function eliminarArchivo(id,path){
 
 
 
-function renderAgendaSemana(){
-  const el=document.getElementById('agenda-semana-c');
-  let html='';
-  DIAS.forEach(dia=>{
-    const ps=pacientes.filter(p=>(p.turnos||[]).some(t=>t.dia===dia));
-    if(!ps.length)return;
-    html+=`<p style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px">${dia}</p>`;
-    const filas=[];
-    ps.forEach(p=>(p.turnos||[]).filter(t=>t.dia===dia).forEach(t=>filas.push({p,t})));
-    filas.sort((a,b)=>(a.t.inicio||'').localeCompare(b.t.inicio||''));
-    filas.forEach(({p,t})=>{
-      html+=`<div class="card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:6px">
-        <span style="font-weight:600;font-size:13px;min-width:100px">${t.inicio||'--:--'}${t.fin?' → '+t.fin:''}</span>
-        <div class="avatar" style="width:28px;height:28px;font-size:10px">${inic(p.nombre)}</div>
-        <span style="flex:1;font-size:13px">${p.nombre}</span>
-        <button class="btn-s btn-sm" onclick="verP(${p.id})">Ver</button>
-      </div>`;
-    });
-  });
+// ─── AGENDA TABS ─────────────────────────────────────────
+let agendaTab='resumen';
+let tareasPanelFiltro='pendiente';
 
-  // Show upcoming tasks
+function setAgendaTab(tab,btn){
+  agendaTab=tab;
+  document.querySelectorAll('.agenda-tab-content').forEach(el=>el.style.display='none');
+  document.querySelectorAll('#agenda-tabs .dtab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('agenda-tab-'+tab).style.display='block';
+  if(btn)btn.classList.add('active');
+  if(tab==='resumen')renderAgendaResumen();
+  if(tab==='hoy')renderAgendaHoy();
+  if(tab==='turnos'){setAgendaView(agendaView||'semana',document.querySelector('#agenda-vistas .seg-btn.active')||document.querySelector('#agenda-vistas .seg-btn'));}
+  if(tab==='tareas')renderTareasPanel();
+}
+
+function renderAgendaResumen(){
   const hoy=new Date();
-  const proxTareas=tasks.filter(t=>t.estado==='pendiente'&&t.fecha_vencimiento).sort((a,b)=>a.fecha_vencimiento.localeCompare(b.fecha_vencimiento)).slice(0,5);
-  if(proxTareas.length){
-    html+=`<p style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin:20px 0 8px">Próximas tareas</p>`;
-    proxTareas.forEach(t=>{
-      const pac=t.paciente_id?pacientes.find(x=>x.id===t.paciente_id):null;
-      const venc=new Date(t.fecha_vencimiento+'T12:00')<hoy;
-      html+=`<div class="card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:6px">
-        <span style="font-size:18px">${venc?'🔴':'🟡'}</span>
-        <div style="flex:1">
-          <p style="font-size:13px;font-weight:500">${t.tipo}${t.descripcion?': '+t.descripcion:''}</p>
-          <p style="font-size:12px;color:#888">${fmtDate(t.fecha_vencimiento)}${pac?' · '+pac.nombre:''}</p>
+  const todayStr=today();
+  const diaSem=DIAS[hoy.getDay()-1];
+
+  // Métricas
+  const turnosHoy=diaSem?pacientes.filter(p=>(p.turnos||[]).some(t=>t.dia===diaSem)).length:0;
+  const pendientes=tasks.filter(t=>t.estado==='pendiente').length;
+  const vencidas=tasks.filter(t=>t.estado==='pendiente'&&t.fecha_vencimiento&&t.fecha_vencimiento<todayStr).length;
+  const eventosProximos=tasks.filter(t=>t.estado==='pendiente'&&t.fecha_vencimiento&&t.fecha_vencimiento>=todayStr).length;
+
+  document.getElementById('agenda-dash-stats').innerHTML=`
+    <div class="dash-card purple"><div class="dash-card-icon">📅</div><div class="dash-card-label">Turnos hoy</div><div class="dash-card-value">${turnosHoy}</div><div class="dash-card-sub">${diaSem||'fin de semana'}</div></div>
+    <div class="dash-card yellow"><div class="dash-card-icon">☑</div><div class="dash-card-label">Pendientes</div><div class="dash-card-value">${pendientes}</div><div class="dash-card-sub">tareas activas</div></div>
+    <div class="dash-card red"><div class="dash-card-icon">⚠️</div><div class="dash-card-label">Vencidas</div><div class="dash-card-value">${vencidas}</div><div class="dash-card-sub">requieren atención</div></div>`;
+
+  // Turnos de hoy con check-in
+  const elT=document.getElementById('agenda-turnos-hoy');
+  const turnosHoyList=diaSem?pacientes.filter(p=>(p.turnos||[]).some(t=>t.dia===diaSem)):[];
+  if(!turnosHoyList.length){elT.innerHTML='<div class="empty" style="padding:16px 0">No hay turnos hoy</div>';}
+  else{elT.innerHTML=turnosHoyList.map(p=>{
+    const ts=(p.turnos||[]).filter(t=>t.dia===diaSem);
+    const ses=sesionesCache[p.id]||[];
+    const sesHoy=ses.find(s=>s.fecha===todayStr);
+    return ts.map(t=>`<div class="card" style="padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+      <div class="avatar" style="width:32px;height:32px;font-size:11px">${inic(p.nombre)}</div>
+      <div style="flex:1"><p style="font-size:13px;font-weight:600">${p.nombre}</p><p style="font-size:11px;color:var(--text-3)">${t.inicio||''}${t.fin?' → '+t.fin:''}</p></div>
+      ${sesHoy?`<span class="badge ${sesHoy.asistencia==='Presente'?'b-ok':sesHoy.asistencia==='Justificado'?'b-warn':'b-bad'}">${sesHoy.asistencia}</span>`:`<div style="display:flex;gap:4px"><button class="btn-sm btn-p" style="font-size:11px;padding:4px 8px" onclick="marcarAsi(${p.id},'${todayStr}','Presente');renderAgendaResumen()">✓</button><button class="btn-sm btn-s" style="font-size:11px;padding:4px 8px" onclick="marcarAsi(${p.id},'${todayStr}','Ausente');renderAgendaResumen()">✗</button></div>`}
+    </div>`).join('');}).join('');}
+
+  // Próximos eventos y tareas (próximos 7 días)
+  const elP=document.getElementById('agenda-proximos');
+  const proximas=tasks.filter(t=>t.estado==='pendiente'&&t.fecha_vencimiento&&t.fecha_vencimiento>=todayStr).sort((a,b)=>a.fecha_vencimiento.localeCompare(b.fecha_vencimiento)).slice(0,5);
+  if(!proximas.length){elP.innerHTML='<div class="empty" style="padding:16px 0">Sin tareas o eventos próximos 🎉</div>';}
+  else{elP.innerHTML=proximas.map(t=>{
+    const pac=t.paciente_id?pacientes.find(x=>x.id===t.paciente_id):null;
+    const esEvento=t.tipo_entrada==='evento';
+    const diff=Math.floor((new Date(t.fecha_vencimiento+'T12:00')-new Date())/86400000);
+    return`<div class="card" style="padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:16px">${esEvento?'📅':'✅'}</span>
+      <div style="flex:1">
+        <p style="font-size:13px;font-weight:500">${t.descripcion||t.tipo}</p>
+        <p style="font-size:11px;color:var(--text-3)">${diff===0?'Hoy':'En '+diff+' día'+(diff>1?'s':'')}${pac?' · '+pac.nombre:''}</p>
+      </div>
+      <div class="task-check ${t.estado==='hecha'?'done':''}" onclick="toggleTask(${t.id});renderAgendaResumen()" style="cursor:pointer"></div>
+    </div>`;}).join('');}
+
+  // Tareas vencidas
+  const elV=document.getElementById('agenda-vencidas');
+  const vencidasList=tasks.filter(t=>t.estado==='pendiente'&&t.fecha_vencimiento&&t.fecha_vencimiento<todayStr).sort((a,b)=>a.fecha_vencimiento.localeCompare(b.fecha_vencimiento));
+  document.getElementById('agenda-vencidas-wrap').style.display=vencidasList.length?'block':'none';
+  if(vencidasList.length){elV.innerHTML=vencidasList.map(t=>{
+    const pac=t.paciente_id?pacientes.find(x=>x.id===t.paciente_id):null;
+    return`<div class="card" style="padding:10px 14px;margin-bottom:8px;border-color:#FECACA;display:flex;align-items:center;gap:10px">
+      <span style="font-size:16px">🔴</span>
+      <div style="flex:1">
+        <p style="font-size:13px;font-weight:500">${t.descripcion||t.tipo}</p>
+        <p style="font-size:11px;color:var(--red)">Venció el ${fmtDate(t.fecha_vencimiento)}${pac?' · '+pac.nombre:''}</p>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button class="btn-edit btn-sm" onclick="openMoAgenda(tasks.find(x=>x.id===${t.id}))">✏️</button>
+        <div class="task-check" onclick="toggleTask(${t.id});renderAgendaResumen()" style="cursor:pointer"></div>
+      </div>
+    </div>`;}).join('');}
+}
+
+function renderAgendaHoy(){
+  const hoy=new Date();
+  const todayStr=today();
+  const diaSem=DIAS[hoy.getDay()-1];
+  const nombreDia=hoy.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('agenda-hoy-fecha').innerHTML=`<strong>${nombreDia.charAt(0).toUpperCase()+nombreDia.slice(1)}</strong> · ${diaSem||'Fin de semana'}`;
+
+  const el=document.getElementById('agenda-hoy-c');
+  const turnos=diaSem?pacientes.filter(p=>(p.turnos||[]).some(t=>t.dia===diaSem)):[];
+  const tareasHoy=tasks.filter(t=>t.estado==='pendiente'&&(t.fecha_vencimiento===todayStr||t.fecha_inicio===todayStr));
+
+  if(!turnos.length&&!tareasHoy.length){
+    el.innerHTML='<div class="empty">No hay turnos ni tareas para hoy.</div>';return;
+  }
+
+  let html='';
+
+  // Timeline de turnos
+  const slots=[];
+  turnos.forEach(p=>{
+    (p.turnos||[]).filter(t=>t.dia===diaSem).forEach(t=>slots.push({tipo:'turno',hora:t.inicio||'',p,t}));
+  });
+  tareasHoy.forEach(t=>slots.push({tipo:'tarea',hora:t.fecha_hora||'',t}));
+  slots.sort((a,b)=>a.hora.localeCompare(b.hora));
+
+  if(turnos.length){
+    html+=`<p style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Turnos del día</p>`;
+    slots.filter(s=>s.tipo==='turno').forEach(({p,t})=>{
+      const ses=sesionesCache[p.id]||[];
+      const sesHoy=ses.find(s=>s.fecha===todayStr);
+      html+=`<div class="semana-col" style="margin-bottom:10px">
+        <div class="semana-slot" style="padding:12px 16px">
+          <span class="semana-hora">${t.inicio||''}${t.fin?'–'+t.fin:''}</span>
+          <div class="avatar" style="width:32px;height:32px;font-size:11px">${inic(p.nombre)}</div>
+          <div style="flex:1">
+            <p style="font-size:13px;font-weight:600">${p.nombre}</p>
+            <p style="font-size:11px;color:var(--text-3)">${(p.turnos||[]).filter(x=>x.dia===diaSem).map(x=>`${x.inicio||''}${x.fin?' → '+x.fin:''}`).join(' / ')}</p>
+          </div>
+          ${sesHoy
+            ?`<span class="badge ${sesHoy.asistencia==='Presente'?'b-ok':sesHoy.asistencia==='Justificado'?'b-warn':'b-bad'}">${sesHoy.asistencia}</span>`
+            :`<div style="display:flex;gap:4px">
+                <button class="btn-sm btn-p" style="font-size:11px;padding:5px 10px" onclick="marcarAsi(${p.id},'${todayStr}','Presente');renderAgendaHoy()">✓ Presente</button>
+                <button class="btn-sm btn-s" style="font-size:11px;padding:5px 10px" onclick="marcarAsi(${p.id},'${todayStr}','Ausente');renderAgendaHoy()">✗ Ausente</button>
+                <button class="btn-sm btn-s" style="font-size:11px;padding:5px 10px" onclick="marcarAsi(${p.id},'${todayStr}','Justificado');renderAgendaHoy()">J</button>
+              </div>`}
         </div>
-        <div class="task-check ${t.estado==='hecha'?'done':''}" onclick="toggleTask(${t.id})" style="cursor:pointer"></div>
       </div>`;
     });
   }
-  el.innerHTML=html||'<div class="empty">No hay turnos ni tareas próximas.</div>';
+
+  if(tareasHoy.length){
+    html+=`<p style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 10px">Tareas / eventos de hoy</p>`;
+    tareasHoy.forEach(t=>{
+      const pac=t.paciente_id?pacientes.find(x=>x.id===t.paciente_id):null;
+      html+=`<div class="agenda-item">
+        <div class="agenda-body">
+          <p class="agenda-titulo">${t.tipo_entrada==='evento'?'📅 ':''} ${t.descripcion||t.tipo}</p>
+          <div class="agenda-meta">
+            ${t.fecha_hora?`<span>🕐 ${t.fecha_hora}</span>`:''}
+            ${pac?`<span class="badge b-info" style="font-size:10px">${pac.nombre}</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center">
+          <button class="btn-edit btn-sm" onclick="openMoAgenda(tasks.find(x=>x.id===${t.id}))">✏️</button>
+          <div class="task-check ${t.estado==='hecha'?'done':''}" onclick="toggleTask(${t.id});renderAgendaHoy()" style="cursor:pointer"></div>
+        </div>
+      </div>`;
+    });
+  }
+
+  el.innerHTML=html;
+}
+
+function renderTareasPanel(){
+  const el=document.getElementById('tareas-panel-c');
+  const todayStr=today();
+  let list=[...tasks];
+  if(tareasPanelFiltro==='pendiente')list=list.filter(t=>t.estado==='pendiente'&&(!t.fecha_vencimiento||t.fecha_vencimiento>=todayStr));
+  else if(tareasPanelFiltro==='vencidas')list=list.filter(t=>t.estado==='pendiente'&&t.fecha_vencimiento&&t.fecha_vencimiento<todayStr);
+  else if(tareasPanelFiltro==='hecha')list=list.filter(t=>t.estado==='hecha');
+  // Para "todas" sin filtro adicional
+
+  list.sort((a,b)=>{
+    // Vencidas primero, luego por fecha, luego por prioridad
+    const fa=a.fecha_vencimiento||a.fecha_inicio||'9999';
+    const fb=b.fecha_vencimiento||b.fecha_inicio||'9999';
+    if(fa!==fb)return fa.localeCompare(fb);
+    return({alta:0,media:1,baja:2}[a.prioridad]||1)-({alta:0,media:1,baja:2}[b.prioridad]||1);
+  });
+
+  if(!list.length){
+    const msgs={pendiente:'¡No hay tareas pendientes! 🎉',vencidas:'No hay tareas vencidas ✓',hecha:'No hay tareas completadas aún.',todas:'No hay tareas. Usá "+ Agregar" para crear una.'};
+    el.innerHTML=`<div class="empty">${msgs[tareasPanelFiltro]||msgs.todas}</div>`;return;
+  }
+
+  const pB=p=>p==='alta'?'b-bad':p==='media'?'b-warn':'b-gray';
+  const grupos={};
+  list.forEach(t=>{
+    const f=t.fecha_vencimiento||t.fecha_inicio||'sin-fecha';
+    if(!grupos[f])grupos[f]=[];
+    grupos[f].push(t);
+  });
+
+  let html='';
+  Object.keys(grupos).sort().forEach(fecha=>{
+    const esHoy=fecha===todayStr;
+    const esPasado=fecha<todayStr&&fecha!=='sin-fecha';
+    const label=fecha==='sin-fecha'?'Sin fecha':esHoy?'Hoy':fmtDate(fecha);
+    html+=`<p style="font-size:11px;font-weight:700;color:${esPasado?'var(--red)':esHoy?'var(--primary)':'var(--text-2)'};text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">${label}${esPasado?' ⚠️':''}</p>`;
+    grupos[fecha].forEach(t=>{
+      const pac=t.paciente_id?pacientes.find(x=>x.id===t.paciente_id):null;
+      const done=t.estado==='hecha';
+      const venc=fecha<todayStr&&fecha!=='sin-fecha'&&!done;
+      html+=`<div class="agenda-item ${venc?'vencido':''}" style="${done?'opacity:.55':''}">
+        ${fecha!=='sin-fecha'?`<div class="agenda-fecha-col">
+          <div class="agenda-fecha-dia">${new Date(fecha+'T12:00').getDate()}</div>
+          <div class="agenda-fecha-mes">${new Date(fecha+'T12:00').toLocaleDateString('es-AR',{month:'short'})}</div>
+        </div>`:''}
+        <div class="agenda-body">
+          <p class="agenda-titulo ${done?'done':''}">${t.tipo_entrada==='evento'?'📅 ':''} ${t.descripcion||t.tipo}</p>
+          <div class="agenda-meta">
+            ${t.fecha_hora?`<span>🕐 ${t.fecha_hora}</span>`:''}
+            <span class="badge ${pB(t.prioridad)}" style="font-size:10px">${t.prioridad}</span>
+            ${pac?`<span class="badge b-info" style="font-size:10px">${pac.nombre}</span>`:''}
+            ${venc?'<span style="color:var(--red);font-weight:500;font-size:11px">⚠️ Vencido</span>':''}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+          <button class="btn-edit btn-sm" onclick="openMoAgenda(tasks.find(x=>x.id===${t.id}))">✏️</button>
+          <div class="task-check ${done?'done':''}" onclick="toggleTask(${t.id});renderTareasPanel()" style="cursor:pointer"></div>
+          <button class="task-del" onclick="eliminarTask(${t.id});renderTareasPanel()">×</button>
+        </div>
+      </div>`;
+    });
+  });
+  el.innerHTML=html;
+}
+
+function filtrarTareasPanel(f,btn){
+  tareasPanelFiltro=f;
+  document.querySelectorAll('#tareas-estado-ctrl .seg-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderTareasPanel();
+}
+
+function renderAgendaSemana(){
+  const el=document.getElementById('agenda-semana-c');
+  const hoy=new Date();
+  const lunes=new Date(hoy);
+  lunes.setDate(hoy.getDate()-((hoy.getDay()+6)%7));
+  let html='';
+  
+  for(let i=0;i<7;i++){
+    const dia=new Date(lunes);
+    dia.setDate(lunes.getDate()+i);
+    const diaStr=dia.toISOString().split('T')[0];
+    const esHoy=diaStr===today();
+    const nombreDia=dia.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'short'});
+    
+    // Turnos del día
+    const diaSem=DIAS[dia.getDay()-1];
+    const turnos=diaSem?pacientes.filter(p=>(p.turnos||[]).some(t=>t.dia===diaSem)):[];
+    
+    // Tareas/eventos del día
+    const tareasDelDia=getTasksFiltrados().filter(t=>{
+      const f=t.fecha_vencimiento||t.fecha_inicio;
+      return f===diaStr;
+    }).sort((a,b)=>(a.fecha_hora||'').localeCompare(b.fecha_hora||''));
+    
+    if(!turnos.length&&!tareasDelDia.length&&!esHoy)continue;
+    
+    html+=`<div class="semana-col">
+      <div class="semana-header ${esHoy?'hoy':''}">
+        <span>${nombreDia.charAt(0).toUpperCase()+nombreDia.slice(1)}</span>
+        ${esHoy?'<span class="badge b-purple">Hoy</span>':''}
+      </div>`;
+    
+    // Mostrar turnos
+    turnos.forEach(p=>{
+      const ts=(p.turnos||[]).filter(t=>t.dia===diaSem);
+      ts.forEach(t=>{
+        html+=`<div class="semana-slot">
+          <span class="semana-hora">${t.inicio||''}${t.fin?'-'+t.fin:''}</span>
+          <div class="avatar" style="width:24px;height:24px;font-size:9px">${inic(p.nombre)}</div>
+          <span style="font-size:13px;flex:1">${p.nombre}</span>
+          <button class="btn-s btn-sm" onclick="verP(${p.id})">Ver</button>
+        </div>`;
+      });
+    });
+    
+    // Mostrar tareas/eventos
+    tareasDelDia.forEach(t=>{
+      const pac=t.paciente_id?pacientes.find(x=>x.id===t.paciente_id):null;
+      const esEvento=t.tipo_entrada==='evento';
+      const done=t.estado==='hecha';
+      html+=`<div class="semana-slot" style="${done?'opacity:.5':''}">
+        <span class="semana-hora">${t.fecha_hora||''}</span>
+        <span style="font-size:16px">${esEvento?'📅':'✅'}</span>
+        <div style="flex:1">
+          <p style="font-size:13px;font-weight:500;${done?'text-decoration:line-through;color:#999':''}">${t.descripcion||t.tipo}</p>
+          ${pac?`<p style="font-size:11px;color:#888">${pac.nombre}</p>`:''}
+        </div>
+        <div style="display:flex;gap:4px">
+          <button class="btn-edit btn-sm" onclick="openMoAgenda(tasks.find(x=>x.id===${t.id}))">✏️</button>
+          <div class="task-check ${done?'done':''}" onclick="toggleTask(${t.id})" style="cursor:pointer;margin-top:2px"></div>
+        </div>
+      </div>`;
+    });
+    
+    html+='</div>';
+  }
+  el.innerHTML=html||'<div class="empty">No hay actividades esta semana.</div>';
 }
 
 function renderPagosGlobal(){
