@@ -962,16 +962,22 @@ function abrirFormPaciente(p=null){
   // Calcular próximo cobro automático si no tiene uno guardado
   let proxCobro=p?p.prox_cobro||'':'';
   if(!proxCobro&&p){
-    const pgs=pagosCache[p.id]||[];
-    if(pgs.length){
-      const ultPago=new Date(pgs[pgs.length-1].fecha+'T12:00');
-      ultPago.setDate(ultPago.getDate()+(p.ciclo||60));
-      proxCobro=ultPago.toISOString().split('T')[0];
-    } else if(p.inicio){
-      const ini=new Date(p.inicio+'T12:00');
-      ini.setDate(ini.getDate()+90);
-      proxCobro=ini.toISOString().split('T')[0];
-    }
+    try{
+      const pgs=pagosCache[p.id]||[];
+      if(pgs.length&&pgs[pgs.length-1].fecha){
+        const ultPago=new Date(pgs[pgs.length-1].fecha+'T12:00');
+        if(!isNaN(ultPago)){
+          ultPago.setDate(ultPago.getDate()+(p.ciclo||60));
+          proxCobro=ultPago.toISOString().split('T')[0];
+        }
+      } else if(p.inicio){
+        const ini=new Date(p.inicio+'T12:00');
+        if(!isNaN(ini)){
+          ini.setDate(ini.getDate()+90);
+          proxCobro=ini.toISOString().split('T')[0];
+        }
+      }
+    }catch(e){proxCobro='';}
   }
   document.getElementById('np-prox-cobro').value=proxCobro;
   // Cargar servicios
