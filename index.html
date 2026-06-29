@@ -288,14 +288,14 @@ body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); 
 .toast.show { opacity: 1; }
 
 /* ── TURNOS ── */
-.turno-fila { display: grid; grid-template-columns: 1.2fr 1fr 1fr auto; gap: 8px; align-items: center; padding: 8px 10px; background: var(--surface-2); border-radius: var(--radius-md); margin-bottom: 6px; border: 1px solid var(--border-light); }
-.turno-fila select, .turno-fila input[type=time] { padding: 6px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); width: 100%; }
+.turno-fila { display: grid; grid-template-columns: 1.2fr 1fr 1fr 0.6fr auto; gap: 8px; align-items: center; padding: 8px 10px; background: var(--surface-2); border-radius: var(--radius-md); margin-bottom: 6px; border: 1px solid var(--border-light); }
+.turno-fila select, .turno-fila input[type=time], .turno-fila input[type=number] { padding: 6px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); width: 100%; }
 .btn-add-turno { background: none; border: 2px dashed var(--border); border-radius: var(--radius-md); padding: 8px; font-size: 12px; color: var(--text-3); cursor: pointer; width: 100%; margin-top: 6px; transition: all .15s; font-family: 'DM Sans', sans-serif; }
 .btn-add-turno:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 .btn-del-turno { background: none; border: none; color: var(--text-3); font-size: 18px; cursor: pointer; padding: 2px; transition: color .15s; }
 .btn-del-turno:hover { color: var(--red); }
 .turno-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--primary-light); border: 1px solid var(--primary-mid); border-radius: var(--radius-sm); padding: 4px 10px; font-size: 12px; font-weight: 500; margin: 2px; color: var(--primary-dark); }
-.turno-header { display: grid; grid-template-columns: 1.2fr 1fr 1fr auto; gap: 8px; padding: 0 10px; margin-bottom: 4px; }
+.turno-header { display: grid; grid-template-columns: 1.2fr 1fr 1fr 0.6fr auto; gap: 8px; padding: 0 10px; margin-bottom: 4px; }
 .turno-header span { font-size: 10px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .04em; }
 
 /* ── SERVICIOS ── */
@@ -396,7 +396,7 @@ body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); 
   .stat-v { font-size: 20px; }
   .modal { padding: 20px; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; left: 0; right: 0; width: 100%!important; max-width: 100%!important; max-height: 92vh; margin: 0; }
   .mo.open { align-items: flex-end; }
-  .turno-fila { grid-template-columns: 1fr 1fr 1fr auto; gap: 4px; padding: 6px 8px; }
+  .turno-fila { grid-template-columns: 1fr 1fr 1fr 0.5fr auto; gap: 4px; padding: 6px 8px; }
   .mactions { flex-direction: column-reverse; }
   .mactions button { width: 100%; }
   .dtab { padding: 8px 10px; font-size: 11px; }
@@ -644,7 +644,7 @@ body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); 
       <div class="fg full"><label>Composición familiar</label><textarea id="np-fam" placeholder="Ej: Vive con mamá y papá..."></textarea></div>
       <div class="fg"><label>Inicio del acompañamiento</label><input type="date" id="np-inicio"></div>
       <div class="fg"><label>Ciclo de pago (cobros posteriores)</label><select id="np-ciclo"><option value="30">Cada 30 días</option><option value="60">Cada 60 días</option><option value="90">Cada 90 días</option></select></div>
-      <div class="fg"><label>Módulos por sesión</label><input type="number" id="np-modulos" min="1" max="10" value="1" placeholder="Ej: 2"></div>
+      <div class="fg"><label>Módulos predeterminados por mes</label><input type="number" id="np-modulos-mes" min="1" max="100" placeholder="Ej: 8" title="Referencia de módulos esperados por mes (cada módulo = 45 min)"></div>
       <div class="fg"><label>Próximo cobro estimado</label><input type="date" id="np-prox-cobro"></div>
       <div class="fg full">
         <label>Servicios y montos</label>
@@ -652,8 +652,8 @@ body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); 
         <button class="btn-add-turno" onclick="agregarServicioFila()">+ Agregar servicio</button>
       </div>
       <div class="fg full">
-        <label>Turnos</label>
-        <div class="turno-header"><span>Día</span><span>Inicio</span><span>Fin</span><span></span></div>
+        <label>Turnos y módulos por turno</label>
+        <div class="turno-header"><span>Día</span><span>Inicio</span><span>Fin</span><span>Mód.</span><span></span></div>
         <div id="turnos-container"></div>
         <button class="btn-add-turno" onclick="agregarTurnoFila()">+ Agregar turno</button>
       </div>
@@ -869,24 +869,24 @@ function fmtProxCobro(p){
 function estadoPago(p){const pg=pagosCache[p.id]||[];if(!pg.length)return'Sin pagos';const diff=Math.floor((new Date()-new Date(pg[pg.length-1].fecha+'T12:00'))/86400000);if(diff<p.ciclo-15)return'Al día';if(diff<p.ciclo)return'Por vencer';return'Pago vencido';}
 function estadoBadge(p){const e=estadoPago(p);return e==='Al día'?'b-ok':e==='Por vencer'?'b-warn':e==='Sin pagos'?'b-gray':'b-bad';}
 
-function agregarTurnoFila(dia='Lunes',inicio='',fin=''){
+function agregarTurnoFila(dia='Lunes',inicio='',fin='',modulos=1){
   const c=document.getElementById('turnos-container');
   const uid='t'+Date.now()+Math.floor(Math.random()*1000);
   const div=document.createElement('div');
   div.className='turno-fila';div.id=uid;
-  div.innerHTML=`<select class="t-dia">${DIAS.map(d=>`<option${d===dia?' selected':''}>${d}</option>`).join('')}</select><input type="time" class="t-inicio" value="${inicio}"><input type="time" class="t-fin" value="${fin}"><button class="btn-del-turno" onclick="document.getElementById('${uid}').remove()">×</button>`;
+  div.innerHTML=`<select class="t-dia">${DIAS.map(d=>`<option${d===dia?' selected':''}>${d}</option>`).join('')}</select><input type="time" class="t-inicio" value="${inicio}"><input type="time" class="t-fin" value="${fin}"><input type="number" class="t-modulos" value="${modulos||1}" min="1" max="10" placeholder="1" title="Módulos por sesión de este turno"><button class="btn-del-turno" onclick="document.getElementById('${uid}').remove()">×</button>`;
   c.appendChild(div);
 }
 
 function getTurnos(){
-  return Array.from(document.querySelectorAll('#turnos-container .turno-fila')).map(f=>({dia:f.querySelector('.t-dia').value,inicio:f.querySelector('.t-inicio').value,fin:f.querySelector('.t-fin').value}));
+  return Array.from(document.querySelectorAll('#turnos-container .turno-fila')).map(f=>({dia:f.querySelector('.t-dia').value,inicio:f.querySelector('.t-inicio').value,fin:f.querySelector('.t-fin').value,modulos:parseInt(f.querySelector('.t-modulos').value)||1}));
 }
 
 function renderTurnosInfo(turnos){
   if(!turnos||!turnos.length)return'<p style="font-size:13px;color:#888">Sin turnos asignados</p>';
   const agrupado={};
   turnos.forEach(t=>{if(!agrupado[t.dia])agrupado[t.dia]=[];agrupado[t.dia].push(t);});
-  return DIAS.filter(d=>agrupado[d]).map(d=>agrupado[d].map(t=>`<span class="turno-tag">📅 ${t.dia}${t.inicio?' '+t.inicio:''}${t.fin?' → '+t.fin:''}</span>`).join('')).join('');
+  return DIAS.filter(d=>agrupado[d]).map(d=>agrupado[d].map(t=>`<span class="turno-tag">📅 ${t.dia}${t.inicio?' '+t.inicio:''}${t.fin?' → '+t.fin:''} · ${t.modulos||1} mód.</span>`).join('')).join('');
 }
 
 function openMo(id){
@@ -958,6 +958,7 @@ function abrirFormPaciente(p=null){
   document.getElementById('np-fam').value=p?p.familia||'':'';
   document.getElementById('np-inicio').value=p?p.inicio||'':'';
   document.getElementById('np-ciclo').value=p?p.ciclo||60:60;
+  document.getElementById('np-modulos-mes').value=p?p.modulos_mes||'':'';
   // Calcular próximo cobro automático si no tiene uno guardado
   let proxCobro=p?p.prox_cobro||'':'';
   if(!proxCobro&&p){
@@ -972,7 +973,6 @@ function abrirFormPaciente(p=null){
       proxCobro=ini.toISOString().split('T')[0];
     }
   }
-  document.getElementById('np-modulos').value=p?p.modulos||1:1;
   document.getElementById('np-prox-cobro').value=proxCobro;
   // Cargar servicios
   document.getElementById('servicios-container').innerHTML='';
@@ -981,7 +981,7 @@ function abrirFormPaciente(p=null){
   else agregarServicioFila();
   document.getElementById('turnos-container').innerHTML='';
   const turnos=p&&p.turnos?p.turnos:[];
-  if(turnos.length)turnos.forEach(t=>agregarTurnoFila(t.dia,t.inicio||'',t.fin||''));
+  if(turnos.length)turnos.forEach(t=>agregarTurnoFila(t.dia,t.inicio||'',t.fin||'',t.modulos||1));
   else agregarTurnoFila();
   openMo('mo-np');
 }
@@ -1047,7 +1047,7 @@ async function guardarP(){
   const n=document.getElementById('np-n').value.trim();
   if(!n){alert('El nombre es obligatorio.');return;}
   const id=document.getElementById('np-id').value;
-  const datos={nombre:n,dni:document.getElementById('np-d').value.trim()||null,fnac:document.getElementById('np-f').value||null,inicio:document.getElementById('np-inicio').value||null,os:document.getElementById('np-os').value.trim()||null,escuela:document.getElementById('np-esc').value.trim()||null,dx:document.getElementById('np-dx').value.trim()||null,familia:document.getElementById('np-fam').value.trim()||null,ciclo:parseInt(document.getElementById('np-ciclo').value),modulos:parseInt(document.getElementById('np-modulos').value)||1,prox_cobro:document.getElementById('np-prox-cobro').value||null,turnos:getTurnos()};
+  const datos={nombre:n,dni:document.getElementById('np-d').value.trim()||null,fnac:document.getElementById('np-f').value||null,inicio:document.getElementById('np-inicio').value||null,os:document.getElementById('np-os').value.trim()||null,escuela:document.getElementById('np-esc').value.trim()||null,dx:document.getElementById('np-dx').value.trim()||null,familia:document.getElementById('np-fam').value.trim()||null,ciclo:parseInt(document.getElementById('np-ciclo').value),modulos_mes:parseInt(document.getElementById('np-modulos-mes').value)||null,prox_cobro:document.getElementById('np-prox-cobro').value||null,turnos:getTurnos()};
   const {error}=id?await db.from('pacientes').update(datos).eq('id',id):await db.from('pacientes').insert(datos);
   if(error){alert('Error al guardar: '+error.message);return;}
   // Guardar servicios
@@ -1084,8 +1084,8 @@ async function verP(id){
       <div class="ii"><label>Tiempo de acompañamiento</label><p>${dur||'-'}</p></div>
       <div class="ii"><label>Estado de pago</label><p><span class="badge ${estadoBadge(p)}">${estadoPago(p)}</span></p></div>
       <div class="ii"><label>Próximo cobro estimado</label><p style="${proxCobroVencido(p)?'color:#a32d2d;font-weight:500':''}">${p.prox_cobro?fmtDate(p.prox_cobro):'No definido'}</p></div>
-      <div class="ii"><label>Módulos por sesión</label><p>${p.modulos||1} módulo${(p.modulos||1)>1?'s':''}</p></div>
-      <div class="ii" style="grid-column:1/-1"><label>Turnos</label><div style="margin-top:6px">${renderTurnosInfo(p.turnos)}</div></div>
+      ${p.modulos_mes?`<div class="ii"><label>Módulos predeterminados / mes</label><p>${p.modulos_mes} mód. · ${p.modulos_mes*45>=60?Math.floor(p.modulos_mes*45/60)+'h '+(p.modulos_mes*45%60>0?p.modulos_mes*45%60+'min':''):p.modulos_mes*45+'min'}</p></div>`:''}
+      <div class="ii" style="grid-column:1/-1"><label>Turnos y módulos</label><div style="margin-top:6px">${renderTurnosInfo(p.turnos)}</div></div>
     </div>`;
   await Promise.all([renderSesionesD(p),renderPagosD(p),renderRegPacienteD(p)]);
   renderAsisPaciente(p);
@@ -1897,7 +1897,8 @@ function calcularCobro(){
   const svId=svSel.value?parseInt(svSel.value):null;
   const svs=serviciosCache[curPId]||[];
   const p=pacientes.find(x=>x.id===curPId);
-  const modulos=p?p.modulos||1:1;
+  const turnos=p?p.turnos||[]:[];
+  const modulosMes=p?p.modulos_mes||null:null; // predeterminado mensual
 
   // Filtrar sesiones del mes (presentes y justificadas)
   const todasSes=sesionesCache[curPId]||[];
@@ -1906,12 +1907,51 @@ function calcularCobro(){
     return d.getFullYear()===anio&&d.getMonth()+1===mes&&(s.asistencia==='Presente'||s.asistencia==='Justificado');
   });
   const totalSes=sesDelMes.length;
-  const totalModulos=totalSes*modulos;
+
+  // Para cada sesión, buscar el turno del día y obtener sus módulos
+  const DIAS_SEM=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  let totalModulos=0;
+  const detalleModulos=[];
+  sesDelMes.forEach(s=>{
+    const diaSemana=DIAS_SEM[new Date(s.fecha+'T12:00').getDay()];
+    const turnoDelDia=turnos.find(t=>t.dia===diaSemana);
+    const modsEsaSesion=turnoDelDia?parseInt(turnoDelDia.modulos)||1:1;
+    totalModulos+=modsEsaSesion;
+    detalleModulos.push({fecha:s.fecha,dia:diaSemana,mods:modsEsaSesion,asistencia:s.asistencia});
+  });
+
+  // Calcular duración total (45 min por módulo)
+  const minutosTotales=totalModulos*45;
+  const horas=Math.floor(minutosTotales/60);
+  const minutos=minutosTotales%60;
+  const durStr=horas>0?(minutos>0?`${horas}h ${minutos}min`:`${horas}h`):`${minutos}min`;
+
+  // Comparar con predeterminado mensual
+  let comparacionHtml='';
+  if(modulosMes){
+    const diff=totalModulos-modulosMes;
+    const diffAbs=Math.abs(diff);
+    const diffMin=diffAbs*45;
+    const diffH=Math.floor(diffMin/60),diffM=diffMin%60;
+    const diffDurStr=diffH>0?(diffM>0?`${diffH}h ${diffM}min`:`${diffH}h`):`${diffM}min`;
+    if(diff===0){
+      comparacionHtml=`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#d1fae5;border-radius:8px;font-size:12px;color:#065F46;margin-bottom:8px">
+        <span>✅</span><span>Coincide con el predeterminado: <strong>${modulosMes} módulos</strong></span>
+      </div>`;
+    } else if(diff>0){
+      comparacionHtml=`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fef3c7;border-radius:8px;font-size:12px;color:#92400E;margin-bottom:8px">
+        <span>📈</span><span>Excede el predeterminado en <strong>${diffAbs} módulo${diffAbs>1?'s':''}</strong> (${diffDurStr} extra) — Predeterminado: ${modulosMes} mód.</span>
+      </div>`;
+    } else {
+      comparacionHtml=`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fee2e2;border-radius:8px;font-size:12px;color:#991B1B;margin-bottom:8px">
+        <span>📉</span><span>Por debajo del predeterminado en <strong>${diffAbs} módulo${diffAbs>1?'s':''}</strong> (${diffDurStr} menos) — Predeterminado: ${modulosMes} mód.</span>
+      </div>`;
+    }
+  }
 
   // Calcular por servicio
   let calcHtml='';
   let totalCalculado=0;
-
   if(svId){
     const sv=svs.find(x=>x.id===svId);
     if(sv){
@@ -1920,7 +1960,7 @@ function calcularCobro(){
       totalCalculado=subtotal;
       calcHtml=`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
         <span>${sv.tipo}</span>
-        <span>${totalSes} ses. × ${modulos} mód. × $${montoPorMod.toLocaleString('es-AR')} = <strong>$${subtotal.toLocaleString('es-AR')}</strong></span>
+        <span>${totalModulos} mód. × $${montoPorMod.toLocaleString('es-AR')} = <strong>$${subtotal.toLocaleString('es-AR')}</strong></span>
       </div>`;
     }
   } else {
@@ -1930,7 +1970,7 @@ function calcularCobro(){
       totalCalculado+=subtotal;
       calcHtml+=`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid #e8e6e0">
         <span style="color:#666">${sv.tipo}</span>
-        <span>${totalSes} ses. × ${modulos} mód. × $${montoPorMod.toLocaleString('es-AR')} = $${subtotal.toLocaleString('es-AR')}</span>
+        <span>${totalModulos} mód. × $${montoPorMod.toLocaleString('es-AR')} = $${subtotal.toLocaleString('es-AR')}</span>
       </div>`;
     });
   }
@@ -1943,14 +1983,24 @@ function calcularCobro(){
     return;
   }
 
+  // Detalle por sesión
+  const detalleHtml=detalleModulos.map(d=>`<div style="display:flex;justify-content:space-between;font-size:11px;color:#888;padding:3px 0;border-bottom:1px solid #f0ede8">
+    <span>${fmtDate(d.fecha)} (${d.dia}) · <span class="badge ${d.asistencia==='Presente'?'b-ok':'b-warn'}" style="font-size:10px">${d.asistencia}</span></span>
+    <span style="font-weight:500">${d.mods} mód. · ${d.mods*45} min</span>
+  </div>`).join('');
+
   el.style.display='block';
   el.innerHTML=`<div style="background:#f8f7f4;border:1px solid #e8e6e0;border-radius:10px;padding:12px 14px;margin-bottom:4px">
-    <p style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Cálculo del mes</p>
-    <div style="font-size:12px;color:#888;margin-bottom:8px">📋 ${totalSes} sesión${totalSes>1?'es':''} × ${modulos} módulo${modulos>1?'s':''} = ${totalModulos} módulos cobrables</div>
+    <p style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Cálculo del mes</p>
+    ${comparacionHtml}
+    <details style="margin-bottom:10px">
+      <summary style="font-size:12px;color:#555;cursor:pointer;font-weight:500">📋 ${totalSes} sesión${totalSes>1?'es':''} cobrable${totalSes>1?'s':''} → <strong>${totalModulos} módulos</strong> · ⏱ ${durStr}</summary>
+      <div style="margin-top:6px;padding:8px 10px;background:#fff;border-radius:6px;border:1px solid #e8e6e0">${detalleHtml}</div>
+    </details>
     ${calcHtml}
-    <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600;margin-top:10px;padding-top:10px;border-top:1px solid #d0cec8">
-      <span>Total calculado</span>
-      <span style="color:#1a1a1a">$${totalCalculado.toLocaleString('es-AR')}</span>
+    <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;margin-top:10px;padding-top:10px;border-top:2px solid #d0cec8">
+      <span>Total a cobrar</span>
+      <span style="color:var(--primary)">$${totalCalculado.toLocaleString('es-AR')}</span>
     </div>
   </div>`;
 
